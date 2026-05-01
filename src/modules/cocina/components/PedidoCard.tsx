@@ -1,5 +1,6 @@
 import type { Pedido } from "../types";
 import { Button } from "../../../components/ui/Button";
+
 interface Props {
   pedido: Pedido;
   onCambiarEstado: (id: number, estado: Pedido["estado"]) => void;
@@ -17,19 +18,19 @@ export const PedidoCard = ({ pedido, onCambiarEstado }: Props) => {
     nuevo: {
       border: "border-orange-500",
       badge: "bg-red-500",
-      boton: "warning",
+      claseBoton: "bg-amber-500 hover:bg-amber-600 text-white w-full",
       textoBoton: "Empezar",
     },
     preparacion: {
-      border: "border-green-600",
-      badge: "bg-green-600",
-      boton: "success",
+      border: "border-emerald-500",
+      badge: "bg-emerald-600",
+      claseBoton: "bg-emerald-500 hover:bg-emerald-600 text-white w-full",
       textoBoton: "Listo para entregar",
     },
     listo: {
-      border: "border-gray-900",
+      border: "border-slate-800",
       badge: "bg-cyan-500",
-      boton: "dark",
+      claseBoton: "bg-slate-800 hover:bg-slate-900 text-white w-full",
       textoBoton: "Archivar",
     },
   } as const;
@@ -37,7 +38,7 @@ export const PedidoCard = ({ pedido, onCambiarEstado }: Props) => {
   const estadoUI = configEstado[pedido.estado];
 
   return (
-    <div className="bg-white border-l-4 border-orange-500 rounded shadow">
+    <div className={`bg-white border-l-4 rounded shadow ${estadoUI.border}`}>
 
       {/* HEADER */}
       <div className="bg-gray-800 text-white p-3 flex justify-between">
@@ -77,12 +78,15 @@ export const PedidoCard = ({ pedido, onCambiarEstado }: Props) => {
         ))}
 
         {/* BOTÓN */}
-        <Button
-          onClick={() => onCambiarEstado(pedido.id, siguienteEstado)}
-          variant={estadoUI.boton}
-        >
-          {estadoUI.textoBoton}
-        </Button>
+        {pedido.estado !== "listo" && (
+          <Button
+            onClick={() => onCambiarEstado(pedido.id, siguienteEstado)}
+            variant="default"
+            className={estadoUI.claseBoton}
+          >
+            {estadoUI.textoBoton}
+          </Button>
+        )}
 
         {/* HORA */}
         <p className="text-xs text-gray-400">

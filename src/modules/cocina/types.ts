@@ -11,4 +11,5 @@ export interface Pedido {
   estado: "nuevo" | "preparacion" | "listo";
   hora: string;
   items: ItemPedido[];
+  createdAt?: string;
 }
