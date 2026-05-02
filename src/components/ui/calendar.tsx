@@ -9,7 +9,6 @@ import {
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "./Button"
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "lucide-react"
-import type { fromTheme } from "tailwind-merge"
 
 function Calendar({
   className,

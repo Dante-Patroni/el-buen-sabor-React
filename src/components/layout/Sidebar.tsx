@@ -1,4 +1,10 @@
 import { Link } from "react-router-dom";
+
+/**
+ * Barra lateral de navegación principal.
+ * Contiene el logo, enlaces a módulos (Cocina, Platos) y enlaces de configuración/logout.
+ * Soporta modo oscuro mediante clases `dark:` de Tailwind.
+ */
 export const Sidebar = () => {
     return (
         <aside className="h-screen w-64 fixed left-0 top-0 bg-stone-100 dark:bg-stone-900 flex flex-col p-4 z-50">
@@ -19,10 +25,9 @@ export const Sidebar = () => {
                 </div>
             </div>
 
-            {/* NAV */}
+            {/* NAV — Enlaces principales */}
             <nav className="flex-1 space-y-2">
 
-                {/* ACTIVO */}
                 <Link to="/cocina" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
                     <span className="material-symbols-outlined">chef_hat</span>
                     <span className="text-sm font-medium">Monitor de Cocina</span>
@@ -33,8 +38,7 @@ export const Sidebar = () => {
                     <span className="text-sm">Platos</span>
                 </Link>
 
-
-                {/* CONFIG abajo */}
+                {/* CONFIG y Logout — Empujados al fondo con mt-auto */}
                 <div className="mt-auto">
                     <Link to="/configuracion" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
                         <span className="material-symbols-outlined">settings</span>
@@ -42,7 +46,7 @@ export const Sidebar = () => {
                     </Link>
 
                     <div className="mt-auto">
-                        <Link to="/Login" className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-100 rounded cursor-pointer">
+                        <Link to="/login" className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-100 rounded cursor-pointer">
                             <span className="material-symbols-outlined">logout</span>
                             <span className="text-sm font-medium">Salir</span>
                         </Link>

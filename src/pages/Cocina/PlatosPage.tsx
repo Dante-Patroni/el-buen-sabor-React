@@ -1,42 +1,34 @@
 import { useLoaderData } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { useNavigate } from "react-router-dom";
-import type { ReactNode } from "react";
 import { useState, useEffect } from "react";
-// Tipo que coincide con lo que devuelve el loader en routes.tsx
-interface Plato {
-  imagenPath: any;
-  id: number;
-  nombre: string;
-  descripcion: string;
-  esMenuDelDia: boolean;
-  esIlimitado: boolean;
-  precio: number;
-  stockActual: number;
-  esActivo: boolean;
-  rubro: {
-    denominacion: ReactNode; nombre: string
-  };
-  rubroId: number;
-}
+import type { Plato, Rubro } from "../../types";
 
+/**
+ * Página de catálogo de platos.
+ * 
+ * Muestra una tabla con todos los platos disponibles, con filtros por categoría y estado.
+ * Los datos se cargan mediante el loader de React Router (Data Mode).
+ * 
+ * Al hacer clic en una fila, navega al formulario de edición pasando el rubro en el state.
+ */
 export const PlatosPage = () => {
   const navigate = useNavigate();
   const platos = useLoaderData() as Plato[];
+  const API_URL = import.meta.env.VITE_API_URL;
 
-  // 🔹 estados
   const [categoriaFiltro, setCategoriaFiltro] = useState<number | "">("");
   const [estadoFiltro, setEstadoFiltro] = useState<string>("");
-  const [rubros, setRubros] = useState<any[]>([]);
+  const [rubros, setRubros] = useState<Rubro[]>([]);
 
-  // 🔹 fetch rubros
+  // Fetch de rubros para los filtros
   useEffect(() => {
-    fetch("http://localhost:3000/api/rubros")
+    fetch(`${API_URL}/api/rubros`)
       .then(res => res.json())
       .then(data => setRubros(data));
   }, []);
 
-  // 🔹 opciones
+  // Genera opciones de filtro incluyendo subrubros
   const opcionesRubros = rubros.flatMap((padre) => {
     const opciones = [{ id: padre.id, label: padre.denominacion }];
     const subrubros = (padre.subrubros || []).map((hijo) => ({
@@ -46,11 +38,9 @@ export const PlatosPage = () => {
     return [...opciones, ...subrubros];
   });
 
-  // 🔹 filtros
+  // Filtra platos por categoría y estado
   const platosFiltrados = platos.filter((p) => {
-    const matchCategoria =
-      !categoriaFiltro || p.rubroId === categoriaFiltro;
-
+    const matchCategoria = !categoriaFiltro || p.rubroId === categoriaFiltro;
     const matchEstado =
       !estadoFiltro ||
       (estadoFiltro === "activo" && p.esActivo) ||
@@ -59,7 +49,7 @@ export const PlatosPage = () => {
     return matchCategoria && matchEstado;
   });
 
-  // 🔹 métricas
+  // Métricas para el dashboard
   const totalPlatos = platosFiltrados.length;
   const disponibles = platosFiltrados.filter(p => p.esActivo).length;
 
@@ -80,14 +70,14 @@ export const PlatosPage = () => {
         <div className="w-52">
           <Button
             onClick={() => navigate("/cocina/platos/nuevo")}
-            variant="warning"
+            variant="destructive"
           >
             Agregar Plato
           </Button>
         </div>
-      </div> {/* 👈 ACÁ se cierra el header */}
+      </div>
 
-      {/* FILTROS */}
+      {/* FILTROS Y MÉTRICAS */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="col-span-2 bg-white p-4 rounded-xl shadow flex gap-4">
           <select
@@ -126,7 +116,7 @@ export const PlatosPage = () => {
         </div>
       </div>
 
-      {/* TABLA */}
+      {/* TABLA DE PLATOS */}
       <div className="bg-white p-4 rounded-xl">
         <table className="w-full text-left">
           <thead>
@@ -158,7 +148,7 @@ export const PlatosPage = () => {
                   <div className="flex items-center gap-4">
                     {plato.imagenPath && (
                       <img
-                        src={`http://localhost:3000${plato.imagenPath}`}
+                        src={`${API_URL}${plato.imagenPath}`}
                         alt={plato.nombre}
                         className="w-16 h-16 object-cover rounded"
                       />
