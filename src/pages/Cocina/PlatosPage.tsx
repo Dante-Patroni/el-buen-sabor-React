@@ -148,7 +148,7 @@ export const PlatosPage = () => {
                   <div className="flex items-center gap-4">
                     {plato.imagenPath && (
                       <img
-                        src={`${API_URL}${plato.imagenPath}`}
+                        src={`${API_URL}${plato.imagenPath.replace(/\\/g, "/")}`}
                         alt={plato.nombre}
                         className="w-16 h-16 object-cover rounded"
                       />
@@ -179,7 +179,7 @@ export const PlatosPage = () => {
 
 
                 <td className="px-4 py-4">
-                  {plato.esIlimitado ? "∞ Ilimitado" : plato.stockActual}
+                  {plato.esIlimitado ? "Ilimitado" : plato.stockActual}
                 </td>
 
                 <td className="px-4 py-4">

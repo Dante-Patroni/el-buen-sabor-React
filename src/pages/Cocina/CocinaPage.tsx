@@ -17,38 +17,76 @@ import { io } from "socket.io-client";
  * - Filtros por estado
  */
 export const CocinaPage = () => {
-    const [pedidos, setPedidos] = useState<Pedido[]>([]);
+    const [pedidos, setPedidos] = useState<Pedido[]>(() => {
+        const stored = localStorage.getItem('pedidos');
+        try {
+            return stored ? JSON.parse(stored) as Pedido[] : [];
+        } catch {
+            return [];
+        }
+    });
     const [filtro, setFiltro] = useState<"todos" | "nuevo" | "preparacion" | "listo">("todos");
     const [isLoading, setIsLoading] = useState(true);
     const API_URL = import.meta.env.VITE_API_URL;
 
     // 📡 Carga inicial de pedidos
     useEffect(() => {
-        const fetchPedidos = async () => {
-            setIsLoading(true);
-            try {
-                const token = localStorage.getItem("token") || "";
-                const response = await fetch(`${API_URL}/api/cocina/pedidos`, {
-                    headers: { "Authorization": `Bearer ${token}` }
+    const fetchPedidos = async () => {
+        setIsLoading(true);
+        try {
+            const token = localStorage.getItem("token") || "";
+            const response = await fetch(`${API_URL}/api/cocina/pedidos`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+
+                const mapEstado = (estadoBackend: string): "nuevo" | "preparacion" | "listo" => {
+                    switch (estadoBackend) {
+                        case "pendiente":
+                            return "nuevo";
+                        case "en_preparacion":
+                            return "preparacion";
+                        case "entregado":
+                            return "listo";
+                        default:
+                            return "nuevo";
+                    }
+                };
+
+                const fetched: Pedido[] = data.data.map((p: any) => ({
+                    ...p,
+                    estado: mapEstado(p.estado),
+                    hora: new Date(p.createdAt || new Date()).toLocaleTimeString("es-AR"),
+                    items: (p.items || p.detalles || p.DetallePedidos || []).map((item: any) => ({
+                        nombre: item.nombre || item.plato || item.Plato?.nombre || "",
+                        cantidad: item.cantidad,
+                        aclaracion: item.aclaracion || item.observacion || "",
+                    })),
+                }));
+
+                // Merge with existing to keep any very recent updates from socket
+                setPedidos(prev => {
+                    const map = new Map(prev.map(p => [p.id, p]));
+                    fetched.forEach(p => map.set(p.id, p));
+                    return Array.from(map.values());
                 });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    setPedidos(data.data);
-                } else {
-                    console.error("Error al traer pedidos de cocina:", response.statusText);
-                }
-            } catch (error) {
-                console.error("Error de red:", error);
-            } finally {
-                setIsLoading(false);
+            } else {
+                console.error("Error al traer pedidos de cocina:", response.statusText);
             }
-        };
-        fetchPedidos();
-    }, []);
+        } catch (error) {
+            console.error("Error de red:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-    // ⚡ WebSocket para actualizaciones en tiempo real
-    useEffect(() => {
+    fetchPedidos();
+}, []);
+
+// // ⚡ WebSocket para actualizaciones en tiempo real
+useEffect(() => {
     const socket = io(`${API_URL}`, {
         transports: ["websocket", "polling"],
     });
@@ -70,19 +108,25 @@ export const CocinaPage = () => {
         console.log("🟢 WebSocket conectado");
     });
 
+    // ✅ FIX 1: evitar duplicados
     socket.on("nuevo-pedido", (nuevoPedido: Pedido) => {
-        const pedidoFormateado: Pedido = {
-            ...nuevoPedido,
-            estado: "nuevo",
-            hora: new Date(nuevoPedido.createdAt || new Date()).toLocaleTimeString("es-AR"),
-            items: nuevoPedido.items.map((item: ItemPedido) => ({
-                nombre: item.nombre || item.plato || "",
-                cantidad: item.cantidad,
-                aclaracion: item.aclaracion || "",
-            })),
-        };
+        setPedidos((prev) => {
+            const existe = prev.some(p => p.id === nuevoPedido.id);
+            if (existe) return prev;
 
-        setPedidos((prev) => [...prev, pedidoFormateado]);
+            const pedidoFormateado: Pedido = {
+                ...nuevoPedido,
+                estado: "nuevo",
+                hora: new Date(nuevoPedido.createdAt || new Date()).toLocaleTimeString("es-AR"),
+                items: nuevoPedido.items.map((item: ItemPedido) => ({
+                    nombre: item.nombre || item.plato || "",
+                    cantidad: item.cantidad,
+                    aclaracion: item.aclaracion || "",
+                })),
+            };
+
+            return [...prev, pedidoFormateado];
+        });
     });
 
     socket.on("estado-pedido-actualizado", ({ id, estado }) => {
@@ -95,54 +139,45 @@ export const CocinaPage = () => {
         );
     });
 
+    // ✅ FIX 2: actualización robusta (no desaparece)
     socket.on("pedido-modificado", (pedidoActualizado: any) => {
-        console.log("🟡 Pedido modificado recibido", pedidoActualizado);
-        console.log("🔑 Keys del pedido:", Object.keys(pedidoActualizado));
-
         const estadoMapeado = mapEstado(pedidoActualizado.estado);
 
-        // Buscar el array de items en las propiedades posibles del backend
         const rawItems: any[] =
             pedidoActualizado.items ||
             pedidoActualizado.DetallePedidos ||
             pedidoActualizado.detallePedidos ||
             pedidoActualizado.detalles ||
-            pedidoActualizado.Detalles ||
-            pedidoActualizado.PedidoDetalles ||
             [];
 
-        console.log("📦 Items encontrados:", rawItems);
+        setPedidos((prev) => {
+            const existe = prev.some(p => p.id === pedidoActualizado.id);
 
-        setPedidos((prev) =>
-            prev.map((p) => {
-                if (p.id !== pedidoActualizado.id) return p;
-
-                // Si hay items del backend, mapearlos usando el nombre existente
-                // ya que el backend no envía "nombre" sino solo cantidad/precio
-                let itemsMapeados: ItemPedido[];
-
-                if (rawItems.length > 0) {
-                    itemsMapeados = rawItems.map((item: any, index: number) => ({
-                        nombre: item.nombre || item.plato || item.Plato?.nombre || p.items[index]?.nombre || "",
+            const itemsMapeados: ItemPedido[] =
+                rawItems.length > 0
+                    ? rawItems.map((item: any) => ({
+                        nombre: item.nombre || item.plato || item.Plato?.nombre || "",
                         cantidad: item.cantidad,
-                        aclaracion: item.aclaracion || item.observacion || p.items[index]?.aclaracion || "",
-                    }));
-                } else {
-                    itemsMapeados = p.items;
-                }
+                        aclaracion: item.aclaracion || item.observacion || "",
+                    }))
+                    : prev.find(p => p.id === pedidoActualizado.id)?.items || [];
 
-                return {
-                    ...p,
-                    mesa: pedidoActualizado.mesa ?? p.mesa,
-                    cliente: pedidoActualizado.cliente ?? p.cliente,
-                    estado: estadoMapeado,
-                    hora: pedidoActualizado.createdAt
-                        ? new Date(pedidoActualizado.createdAt).toLocaleTimeString("es-AR")
-                        : p.hora,
-                    items: itemsMapeados,
-                };
-            })
-        );
+            const pedidoNuevo: Pedido = {
+                ...pedidoActualizado,
+                estado: estadoMapeado,
+                hora: pedidoActualizado.createdAt
+                    ? new Date(pedidoActualizado.createdAt).toLocaleTimeString("es-AR")
+                    : new Date().toLocaleTimeString("es-AR"),
+                items: itemsMapeados,
+            };
+
+            // 👉 clave: si no existe, lo agrega
+            if (!existe) return [...prev, pedidoNuevo];
+
+            return prev.map((p) =>
+                p.id === pedidoActualizado.id ? pedidoNuevo : p
+            );
+        });
     });
 
     return () => {
@@ -153,6 +188,11 @@ export const CocinaPage = () => {
         socket.disconnect();
     };
 }, []);
+
+    // 💾 Persistencia en localStorage para evitar pérdida al navegar
+    useEffect(() => {
+        localStorage.setItem('pedidos', JSON.stringify(pedidos));
+    }, [pedidos]);
 
 
     /**
