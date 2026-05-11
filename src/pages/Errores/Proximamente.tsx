@@ -1,4 +1,9 @@
 import { Link } from "react-router-dom";
+
+/**
+ * @description Renderiza una pantalla temporal para rutas o funcionalidades todavia no implementadas.
+ * @returns {JSX.Element} Pagina de funcionalidad en desarrollo.
+ */
 export const Proximamente = () => {
   return (
     <div className="flex flex-col items-center justify-center h-full p-6 text-center">

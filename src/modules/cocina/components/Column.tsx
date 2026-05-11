@@ -6,9 +6,15 @@ interface ColumnProps {
   estado: string;
   pedidos: Pedido[];
   cambiarEstado: (id: number, estado: "nuevo" | "preparacion" | "listo") => void;
+  onEntregado: (id: number) => void;
 }
 
-export const Column = ({ title, estado, pedidos, cambiarEstado }: ColumnProps) => {
+/**
+ * @description Renderiza una columna del tablero filtrando los pedidos por estado.
+ * @param {ColumnProps} props - Titulo, estado objetivo, pedidos disponibles y callbacks de accion.
+ * @returns {JSX.Element} Columna con tarjetas de pedidos filtradas.
+ */
+export const Column = ({ title, estado, pedidos, cambiarEstado, onEntregado }: ColumnProps) => {
   const pedidosFiltrados = pedidos.filter(
     (p) => p.estado === estado
   );
@@ -23,6 +29,7 @@ export const Column = ({ title, estado, pedidos, cambiarEstado }: ColumnProps) =
           key={pedido.id}
           pedido={pedido}
           onCambiarEstado={cambiarEstado}
+          onEntregado={onEntregado}
         />
       ))}
     </div>

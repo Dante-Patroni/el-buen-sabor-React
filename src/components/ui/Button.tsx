@@ -40,6 +40,11 @@ const buttonVariants = cva(
   }
 )
 
+/**
+ * @description Renderiza un boton base con variantes visuales y tamanos definidos por el sistema de UI.
+ * @param {ButtonPrimitive.Props & VariantProps<typeof buttonVariants>} props - Propiedades del boton y variantes de estilo.
+ * @returns {JSX.Element} Boton estilizado compatible con Base UI.
+ */
 function Button({
   className,
   variant = "default",

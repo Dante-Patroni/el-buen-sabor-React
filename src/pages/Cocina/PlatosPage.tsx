@@ -5,12 +5,8 @@ import { useState, useEffect } from "react";
 import type { Plato, Rubro } from "../../types";
 
 /**
- * Página de catálogo de platos.
- * 
- * Muestra una tabla con todos los platos disponibles, con filtros por categoría y estado.
- * Los datos se cargan mediante el loader de React Router (Data Mode).
- * 
- * Al hacer clic en una fila, navega al formulario de edición pasando el rubro en el state.
+ * @description Renderiza el catalogo de platos con filtros por categoria y estado.
+ * @returns {JSX.Element} Pagina de administracion de platos.
  */
 export const PlatosPage = () => {
   const navigate = useNavigate();

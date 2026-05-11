@@ -19,7 +19,7 @@ export interface Pedido {
   /** Identificador único del pedido */
   id: number;
   /** Número de mesa asociado */
-  mesa: number;
+  mesaId: number;
   /** Nombre del cliente que realizó el pedido */
   cliente: string;
   /** Estado actual del pedido en el flujo de cocina */

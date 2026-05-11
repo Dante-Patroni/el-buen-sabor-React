@@ -11,6 +11,11 @@ import { Proximamente } from "../pages/Errores/Proximamente";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+/**
+ * @description Carga el listado de platos y normaliza el identificador de rubro recibido desde el backend.
+ * @returns {Promise<unknown>} Listado de platos normalizado o respuesta original si no es un arreglo.
+ * @throws {Error} Error al cargar los platos.
+ */
 const platosLoader = async () => {
   const res = await fetch(`${API_URL}/api/platos`);
   if (!res.ok) throw new Error("Error al cargar los platos");
@@ -22,6 +27,12 @@ const platosLoader = async () => {
   }));
 };
 
+/**
+ * @description Carga un plato por ID para inicializar el formulario de edicion.
+ * @param {LoaderFunctionArgs} args - Argumentos del loader con los parametros de ruta.
+ * @returns {Promise<unknown>} Plato normalizado con rubroId.
+ * @throws {Error} Error al cargar el plato.
+ */
 const platoLoader = async ({ params }: LoaderFunctionArgs) => {
   const res = await fetch(`${API_URL}/api/platos/${params.id}`);
   if (!res.ok) {
@@ -36,6 +47,11 @@ const platoLoader = async ({ params }: LoaderFunctionArgs) => {
   };
 };
 
+/**
+ * @description Procesa la edicion de un plato y sube una imagen nueva cuando el formulario la incluye.
+ * @param {ActionFunctionArgs} args - Argumentos de la action con request y parametros de ruta.
+ * @returns {Promise<Response|{error: string}>} Redireccion al catalogo o mensaje de error para la UI.
+ */
 const editarPlatoAction = async ({ request, params }: ActionFunctionArgs) => {
   const id = params.id!;
   const formData = await request.formData();
@@ -96,6 +112,11 @@ const editarPlatoAction = async ({ request, params }: ActionFunctionArgs) => {
   }
 };
 
+/**
+ * @description Procesa la creacion de un plato y sube su imagen inicial cuando corresponde.
+ * @param {ActionFunctionArgs} args - Argumentos de la action con los datos del formulario.
+ * @returns {Promise<Response|{error: string}>} Redireccion al catalogo o mensaje de error para la UI.
+ */
 const crearPlatoAction = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   

@@ -2,22 +2,18 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 /**
- * Utilidad para combinar clases de Tailwind CSS de forma segura.
- * Resuelve conflictos entre clases y permite valores condicionales.
- * 
- * @example
- * cn("bg-red-500", { "text-white": isActive }, "p-4")
+ * @description Combina clases CSS condicionales y resuelve conflictos de Tailwind CSS.
+ * @param {ClassValue[]} inputs - Lista de clases, objetos o valores condicionales aceptados por clsx.
+ * @returns {string} Cadena final de clases CSS.
  */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 /**
- * Extrae el ID del rubro/categoría de un objeto Plato o similar.
- * Maneja las diferentes variantes de nomenclatura que puede devolver el backend.
- * 
- * @param item - Objeto que puede contener rubroId, RubroId, rubro.id, etc.
- * @returns El ID numérico del rubro o null si no se encuentra.
+ * @description Extrae el ID del rubro/categoria de un objeto Plato o similar.
+ * @param {unknown} item - Objeto que puede contener rubroId, RubroId, rubro_id, rubro.id o Rubro.id.
+ * @returns {number|null} ID numerico del rubro o null si no se encuentra.
  */
 export function extractRubroId(item: unknown): number | null {
   if (!item || typeof item !== 'object') return null;

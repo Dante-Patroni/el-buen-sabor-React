@@ -10,6 +10,11 @@ import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "./Button"
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "lucide-react"
 
+/**
+ * @description Renderiza un calendario configurable basado en DayPicker con estilos del sistema de UI.
+ * @param {React.ComponentProps<typeof DayPicker> & {buttonVariant?: React.ComponentProps<typeof Button>["variant"]}} props - Propiedades del calendario y variante de botones de navegacion.
+ * @returns {JSX.Element} Calendario interactivo para seleccion de fechas.
+ */
 function Calendar({
   className,
   classNames,
@@ -178,6 +183,11 @@ function Calendar({
   )
 }
 
+/**
+ * @description Renderiza el boton de dia del calendario y enfoca el dia marcado cuando corresponde.
+ * @param {React.ComponentProps<typeof DayButton> & {locale?: Partial<Locale>}} props - Propiedades del dia y configuracion regional opcional.
+ * @returns {JSX.Element} Boton de dia estilizado para DayPicker.
+ */
 function CalendarDayButton({
   className,
   day,

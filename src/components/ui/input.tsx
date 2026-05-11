@@ -3,6 +3,11 @@ import { Input as InputPrimitive } from "@base-ui/react/input"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * @description Renderiza un input base con estilos del sistema de UI y soporte para estados accesibles.
+ * @param {React.ComponentProps<"input">} props - Propiedades HTML del input.
+ * @returns {JSX.Element} Input estilizado compatible con Base UI.
+ */
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
     <InputPrimitive

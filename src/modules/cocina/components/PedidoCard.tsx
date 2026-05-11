@@ -4,9 +4,15 @@ import { Button } from "../../../components/ui/Button";
 interface Props {
   pedido: Pedido;
   onCambiarEstado: (id: number, estado: Pedido["estado"]) => void;
+  onEntregado: (id: number) => void;
 }
 
-export const PedidoCard = ({ pedido, onCambiarEstado }: Props) => {
+/**
+ * @description Renderiza una tarjeta de pedido con detalle de items y accion para avanzar su estado.
+ * @param {Props} props - Pedido a mostrar y callbacks para interactuar con su estado.
+ * @returns {JSX.Element} Tarjeta del pedido para el monitor de cocina.
+ */
+export const PedidoCard = ({ pedido, onCambiarEstado, onEntregado }: Props) => {
   const siguienteEstado =
     pedido.estado === "nuevo"
       ? "preparacion"
@@ -30,8 +36,8 @@ export const PedidoCard = ({ pedido, onCambiarEstado }: Props) => {
     listo: {
       border: "border-slate-800",
       badge: "bg-cyan-500",
-      claseBoton: "bg-slate-800 hover:bg-slate-900 text-white w-full",
-      textoBoton: "Archivar",
+      claseBoton: "bg-blue-700 hover:bg-blue-800 text-white w-full",
+      textoBoton: "Entregado",
     },
   } as const;
 
@@ -42,7 +48,7 @@ export const PedidoCard = ({ pedido, onCambiarEstado }: Props) => {
 
       {/* HEADER */}
       <div className="bg-gray-800 text-white p-3 flex justify-between">
-        <span className="font-bold">Mesa {pedido.mesa}</span>
+        <span className="font-bold">Mesa {pedido.mesaId}</span>
 
         <span className={`text-xs px-2 py-1 rounded ${estadoUI.badge}`}>
           {pedido.estado.toUpperCase()}
@@ -78,15 +84,25 @@ export const PedidoCard = ({ pedido, onCambiarEstado }: Props) => {
         ))}
 
         {/* BOTÓN */}
-        {pedido.estado !== "listo" && (
-          <Button
-            onClick={() => onCambiarEstado(pedido.id, siguienteEstado)}
-            variant="default"
-            className={estadoUI.claseBoton}
-          >
-            {estadoUI.textoBoton}
-          </Button>
-        )}
+        <div className="pt-2">
+          {pedido.estado === "listo" ? (
+            <Button
+              onClick={() => onEntregado(pedido.id)}
+              variant="default"
+              className={estadoUI.claseBoton}
+            >
+              {estadoUI.textoBoton}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => onCambiarEstado(pedido.id, siguienteEstado)}
+              variant="default"
+              className={estadoUI.claseBoton}
+            >
+              {estadoUI.textoBoton}
+            </Button>
+          )}
+        </div>
 
         {/* HORA */}
         <p className="text-xs text-gray-400">

@@ -1,9 +1,8 @@
 import { Link } from "react-router-dom";
 
 /**
- * Barra lateral de navegación principal.
- * Contiene el logo, enlaces a módulos (Cocina, Platos) y enlaces de configuración/logout.
- * Soporta modo oscuro mediante clases `dark:` de Tailwind.
+ * @description Renderiza la barra lateral de navegacion principal con accesos de modulo y configuracion.
+ * @returns {JSX.Element} Sidebar fija de la aplicacion.
  */
 export const Sidebar = () => {
     return (
@@ -25,7 +24,7 @@ export const Sidebar = () => {
                 </div>
             </div>
 
-            {/* NAV — Enlaces principales */}
+            {/* NAV - Enlaces principales */}
             <nav className="flex-1 space-y-2">
 
                 <Link to="/cocina" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
@@ -38,7 +37,7 @@ export const Sidebar = () => {
                     <span className="text-sm">Platos</span>
                 </Link>
 
-                {/* CONFIG y Logout — Empujados al fondo con mt-auto */}
+                {/* CONFIG y Logout - Empujados al fondo con mt-auto */}
                 <div className="mt-auto">
                     <Link to="/configuracion" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
                         <span className="material-symbols-outlined">settings</span>

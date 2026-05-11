@@ -2,6 +2,11 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * @description Renderiza una etiqueta de formulario con estilos del sistema de UI.
+ * @param {React.ComponentProps<"label">} props - Propiedades HTML de la etiqueta.
+ * @returns {JSX.Element} Label estilizado.
+ */
 function Label({ className, ...props }: React.ComponentProps<"label">) {
   return (
     <label

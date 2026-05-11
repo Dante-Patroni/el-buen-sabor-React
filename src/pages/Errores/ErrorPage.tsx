@@ -1,4 +1,9 @@
 import { useRouteError, isRouteErrorResponse } from "react-router-dom";
+
+/**
+ * @description Renderiza un mensaje de error para errores de rutas y excepciones inesperadas.
+ * @returns {JSX.Element} Pagina de error asociada al router.
+ */
 export const ErrorPage = () => {
   const error = useRouteError();
   if (isRouteErrorResponse(error)) {

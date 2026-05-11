@@ -11,6 +11,10 @@ import { Calendar } from "@/components/ui/calendar";
 import type { Plato, Rubro } from "@/types";
 import { extractRubroId } from "@/lib/utils";
 
+/**
+ * @description Renderiza el formulario para crear o editar platos usando actions/loaders de React Router.
+ * @returns {JSX.Element} Pagina de formulario de plato.
+ */
 export const PlatoFormPage = () => {
     const API_URL = import.meta.env.VITE_API_URL;
     const [nombre, setNombre] = useState("");
@@ -38,6 +42,11 @@ export const PlatoFormPage = () => {
     
     const [imagenPreview, setImagenPreview] = useState<string | null>(null);
 
+    /**
+     * @description Genera una URL temporal para previsualizar la imagen seleccionada.
+     * @param {React.ChangeEvent<HTMLInputElement>} e - Evento de cambio del input file.
+     * @returns {void} No retorna valor; actualiza la previsualizacion de imagen.
+     */
     const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -45,6 +54,11 @@ export const PlatoFormPage = () => {
         setImagenPreview(url);
     };
 
+    /**
+     * @description Actualiza el modo de stock ilimitado y limpia el stock manual si se activa.
+     * @param {boolean} checked - Indica si el stock ilimitado queda activado.
+     * @returns {void} No retorna valor; actualiza el estado local del formulario.
+     */
     const handleIlimitadoChange = (checked: boolean) => {
         setEsIlimitado(checked);
         if (checked) setStockActual("");
@@ -66,6 +80,11 @@ export const PlatoFormPage = () => {
         return [...opciones, ...subrubros];
     });
 
+    /**
+     * @description Busca el ID de un subrubro a partir de su denominacion.
+     * @param {string|null|undefined} denominacion - Nombre del subrubro recibido desde navegacion o backend.
+     * @returns {number|null} ID del subrubro encontrado o null si no hay coincidencia.
+     */
     const resolveRubroIdByDenominacion = (denominacion?: string | null) => {
         const normalized = (denominacion ?? "").trim().toLowerCase();
         if (!normalized) return null;

@@ -2,6 +2,11 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * @description Renderiza el contenedor principal de una tarjeta con variantes de tamano.
+ * @param {React.ComponentProps<"div"> & {size?: "default"|"sm"}} props - Propiedades HTML del contenedor y tamano visual.
+ * @returns {JSX.Element} Tarjeta base del sistema de UI.
+ */
 function Card({
   className,
   size = "default",
@@ -20,6 +25,11 @@ function Card({
   )
 }
 
+/**
+ * @description Renderiza el encabezado de una tarjeta.
+ * @param {React.ComponentProps<"div">} props - Propiedades HTML del encabezado.
+ * @returns {JSX.Element} Encabezado de tarjeta.
+ */
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -33,6 +43,11 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * @description Renderiza el titulo de una tarjeta.
+ * @param {React.ComponentProps<"div">} props - Propiedades HTML del titulo.
+ * @returns {JSX.Element} Titulo de tarjeta.
+ */
 function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -46,6 +61,11 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * @description Renderiza la descripcion secundaria de una tarjeta.
+ * @param {React.ComponentProps<"div">} props - Propiedades HTML de la descripcion.
+ * @returns {JSX.Element} Descripcion de tarjeta.
+ */
 function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -56,6 +76,11 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * @description Renderiza el area de acciones alineada al encabezado de una tarjeta.
+ * @param {React.ComponentProps<"div">} props - Propiedades HTML del area de acciones.
+ * @returns {JSX.Element} Contenedor de acciones de tarjeta.
+ */
 function CardAction({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -69,6 +94,11 @@ function CardAction({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * @description Renderiza el contenido principal de una tarjeta.
+ * @param {React.ComponentProps<"div">} props - Propiedades HTML del contenido.
+ * @returns {JSX.Element} Contenido de tarjeta.
+ */
 function CardContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -79,6 +109,11 @@ function CardContent({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * @description Renderiza el pie de una tarjeta.
+ * @param {React.ComponentProps<"div">} props - Propiedades HTML del pie.
+ * @returns {JSX.Element} Pie de tarjeta.
+ */
 function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div

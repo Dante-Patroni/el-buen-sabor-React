@@ -1,4 +1,9 @@
 import { useState, useEffect } from "react";
+
+/**
+ * @description Renderiza la pagina de configuracion y permite alternar el modo oscuro persistido.
+ * @returns {JSX.Element} Pagina de configuracion de apariencia.
+ */
 export const ConfigPage = () => {
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("darkMode") === "true";

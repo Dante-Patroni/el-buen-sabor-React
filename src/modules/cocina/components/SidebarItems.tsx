@@ -4,6 +4,11 @@ interface Props {
   active?: boolean;
 }
 
+/**
+ * @description Renderiza un item visual de navegacion para la sidebar del modulo cocina.
+ * @param {Props} props - Propiedades del item con etiqueta, icono y estado activo.
+ * @returns {JSX.Element} Item de sidebar estilizado.
+ */
 export const SidebarItem = ({ label, icon, active = false }: Props) => {
   return (
     <div
