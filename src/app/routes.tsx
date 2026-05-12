@@ -4,12 +4,14 @@ import { AppLayout } from "../components/layout/AppLayout";
 import { CocinaPage } from "../pages/Cocina/CocinaPage";
 import { PlatosPage } from "../pages/Cocina/PlatosPage";
 import { PlatoFormPage } from "../pages/Cocina/PlatoFormPage";
+import { LoginPage } from "../pages/Auth/LoginPage";
 import { extractRubroId } from "@/lib/utils";
 import { ErrorPage } from "../pages/Errores/ErrorPage";
 import { ConfigPage } from "../pages/Configuracion/ConfigPage";
-import { Proximamente } from "../pages/Errores/Proximamente";
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+
 
 /**
  * @description Carga el listado de platos y normaliza el identificador de rubro recibido desde el backend.
@@ -55,12 +57,12 @@ const platoLoader = async ({ params }: LoaderFunctionArgs) => {
 const editarPlatoAction = async ({ request, params }: ActionFunctionArgs) => {
   const id = params.id!;
   const formData = await request.formData();
-  
+
   console.log("=== EDITAR PLATO ===");
   console.log("ID:", id);
-  
+
   const esIlimitado = formData.get("esIlimitado") === "on";
-  
+
   const payload = {
     nombre: formData.get("nombre"),
     precio: Number(formData.get("precio")),
@@ -71,32 +73,32 @@ const editarPlatoAction = async ({ request, params }: ActionFunctionArgs) => {
     esActivo: formData.get("esActivo") === "on",
     stockActual: esIlimitado ? null : Number(formData.get("stockActual")),
   };
-  
+
   try {
     const res = await fetch(`${API_URL}/api/platos/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    
+
     if (!res.ok) {
       const text = await res.text();
       console.error("Error al editar plato:", text);
       return { error: "Error al editar plato" };
     }
-    
+
     const imagenFile = formData.get("imagen") as File | null;
     console.log("Imagen:", imagenFile?.name || "NINGUNA");
-    
+
     if (imagenFile && imagenFile.size > 0) {
       const imgFormData = new FormData();
       imgFormData.append("imagen", imagenFile);
-      
+
       const imgRes = await fetch(`${API_URL}/api/platos/${id}/imagen`, {
         method: "POST",
         body: imgFormData,
       });
-      
+
       if (!imgRes.ok) {
         console.error("ERROR IMG:", await imgRes.text());
       } else {
@@ -104,7 +106,7 @@ const editarPlatoAction = async ({ request, params }: ActionFunctionArgs) => {
         console.log("IMG OK:", data);
       }
     }
-    
+
     return redirect("/cocina/platos");
   } catch (error) {
     console.error("Error en editarPlatoAction:", error);
@@ -119,15 +121,15 @@ const editarPlatoAction = async ({ request, params }: ActionFunctionArgs) => {
  */
 const crearPlatoAction = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
-  
+
   console.log("=== CREAR PLATO ===");
-  
+
   if (!formData.get("nombre")) {
     return { error: "El nombre es obligatorio" };
   }
-  
+
   const esIlimitado = formData.get("esIlimitado") === "on";
-  
+
   const payload = {
     nombre: formData.get("nombre"),
     precio: Number(formData.get("precio")),
@@ -138,35 +140,35 @@ const crearPlatoAction = async ({ request }: ActionFunctionArgs) => {
     esActivo: formData.get("esActivo") === "on",
     stockActual: esIlimitado ? null : Number(formData.get("stockActual")),
   };
-  
+
   try {
     const res = await fetch(`${API_URL}/api/platos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    
+
     if (!res.ok) {
       const text = await res.text();
       console.error("Error al crear plato:", text);
       return { error: "Error al crear plato" };
     }
-    
+
     const nuevoPlato = await res.json();
     console.log("Plato creado con ID:", nuevoPlato.id);
-    
+
     const imagenFile = formData.get("imagen") as File | null;
     console.log("Imagen:", imagenFile?.name || "NINGUNA");
-    
+
     if (imagenFile && imagenFile.size > 0) {
       const imgFormData = new FormData();
       imgFormData.append("imagen", imagenFile);
-      
+
       const imgRes = await fetch(`${API_URL}/api/platos/${nuevoPlato.id}/imagen`, {
         method: "POST",
         body: imgFormData,
       });
-      
+
       if (!imgRes.ok) {
         console.error("ERROR IMG:", await imgRes.text());
       } else {
@@ -174,31 +176,182 @@ const crearPlatoAction = async ({ request }: ActionFunctionArgs) => {
         console.log("IMG OK:", data);
       }
     }
-    
+
     return redirect("/cocina/platos");
   } catch (error) {
     console.error("Error en crearPlatoAction:", error);
     return { error: "Error al crear plato" };
   }
 };
+/**
+ * @description Protege rutas privadas redirigiendo al login si no existe token.
+ */
+const authLoader = async () => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return redirect("/login");
+  }
+
+  return null;
+};
+
+/**
+ * @description Evita ingresar al login si ya existe una sesión activa.
+ */
+const loginLoader = async () => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    return redirect("/cocina");
+  }
+
+  return null;
+};
+
+/**
+ * @description Procesa el login del usuario contra el backend.
+ */
+const loginAction = async ({
+  request,
+}: ActionFunctionArgs) => {
+  const formData = await request.formData();
+
+  const legajo = formData.get("legajo");
+  const password = formData.get("password");
+
+  if (!legajo || !password) {
+    return {
+      error: "Todos los campos son obligatorios",
+    };
+  }
+
+  try {
+    const response = await fetch(
+      `${API_URL}/api/usuarios/login`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          legajo,
+          password,
+        }),
+      },
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        error:
+          data.error ||
+          "Credenciales inválidas",
+      };
+    }
+
+    /**
+     * Persistencia de sesión.
+     */
+    localStorage.setItem(
+      "token",
+      data.token,
+    );
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify(data.usuario),
+    );
+
+    /**
+     * Redirección según rol.
+     */
+    switch (data.usuario.rol) {
+      case "admin":
+        return redirect("/cocina/platos");
+
+      case "cocina":
+        return redirect("/cocina");
+
+      default:
+        return redirect("/");
+    }
+  } catch (error) {
+    console.error(error);
+
+    return {
+      error:
+        "Error de conexión con el servidor",
+    };
+  }
+};
+
+/**
+ * @description Redirecciona segun estado de autenticacion.
+ */
+const rootLoader = async () => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    return redirect("/cocina");
+  }
+
+  return redirect("/login");
+};
 
 export const router = createBrowserRouter([
+  /**
+   * Rutas publicas.
+   */
+  {
+    path: "/login",
+    element: <LoginPage />,
+    loader: loginLoader,
+    action: loginAction,
+  },
+
+  /**
+   * Rutas protegidas.
+   */
   {
     element: <AppLayout />,
+    loader: authLoader,
+
     children: [
-      { path: "/", element: <CocinaPage /> },
+      {
+  path: "/",
+  loader: rootLoader,
+},
+
       { path: "/cocina", element: <CocinaPage /> },
-      { path: "/cocina/platos", element: <PlatosPage />, loader: platosLoader, errorElement: <ErrorPage /> },
-      { path: "/cocina/platos/nuevo", element: <PlatoFormPage />, action: crearPlatoAction, errorElement: <ErrorPage /> },
-      { path: "/configuracion", element: <ConfigPage /> },
-      { path: "/login", element: <Proximamente /> },
+
+      {
+        path: "/cocina/platos",
+        element: <PlatosPage />,
+        loader: platosLoader,
+        errorElement: <ErrorPage />,
+      },
+
+      {
+        path: "/cocina/platos/nuevo",
+        element: <PlatoFormPage />,
+        action: crearPlatoAction,
+        errorElement: <ErrorPage />,
+      },
+
+      {
+        path: "/configuracion",
+        element: <ConfigPage />,
+      },
+
       {
         path: "/cocina/platos/:id",
         element: <PlatoFormPage />,
         loader: platoLoader,
         action: editarPlatoAction,
         errorElement: <ErrorPage />,
-      }
+      },
     ],
   },
 ]);

@@ -37,19 +37,38 @@ export const Sidebar = () => {
                     <span className="text-sm">Platos</span>
                 </Link>
 
-                {/* CONFIG y Logout - Empujados al fondo con mt-auto */}
+                {/* CONFIG y Logout */}
                 <div className="mt-auto">
-                    <Link to="/configuracion" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
-                        <span className="material-symbols-outlined">settings</span>
-                        <span className="text-sm font-medium">Configuración</span>
+                    <Link
+                        to="/configuracion"
+                        className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition"
+                    >
+                        <span className="material-symbols-outlined">
+                            settings
+                        </span>
+
+                        <span className="text-sm font-medium">
+                            Configuración
+                        </span>
                     </Link>
 
-                    <div className="mt-auto">
-                        <Link to="/login" className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-100 rounded cursor-pointer">
-                            <span className="material-symbols-outlined">logout</span>
-                            <span className="text-sm font-medium">Salir</span>
-                        </Link>
-                    </div>
+                    <button
+                        onClick={() => {
+                            localStorage.removeItem("token");
+                            localStorage.removeItem("user");
+
+                            window.location.href = "/login";
+                        }}
+                        className="flex w-full items-center gap-3 rounded px-4 py-3 text-red-600 hover:bg-red-100 cursor-pointer"
+                    >
+                        <span className="material-symbols-outlined">
+                            logout
+                        </span>
+
+                        <span className="text-sm font-medium">
+                            Salir
+                        </span>
+                    </button>
                 </div>
 
             </nav>
