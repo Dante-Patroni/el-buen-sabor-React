@@ -1,193 +1,59 @@
 import { createBrowserRouter, redirect } from "react-router-dom";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router-dom";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+} from "react-router-dom";
+
 import { AppLayout } from "../components/layout/AppLayout";
+
 import { CocinaPage } from "../pages/Cocina/CocinaPage";
 import { PlatosPage } from "../pages/Cocina/PlatosPage";
 import { PlatoFormPage } from "../pages/Cocina/PlatoFormPage";
+
 import { LoginPage } from "../pages/Auth/LoginPage";
-import { extractRubroId } from "@/lib/utils";
+
 import { ErrorPage } from "../pages/Errores/ErrorPage";
 import { ConfigPage } from "../pages/Configuracion/ConfigPage";
 
-const API_URL = import.meta.env.VITE_API_URL;
+import { extractRubroId } from "@/lib/utils";
+import { authFetch } from "@/lib/authFetch";
 
-
-
-/**
- * @description Carga el listado de platos y normaliza el identificador de rubro recibido desde el backend.
- * @returns {Promise<unknown>} Listado de platos normalizado o respuesta original si no es un arreglo.
- * @throws {Error} Error al cargar los platos.
- */
-const platosLoader = async () => {
-  const res = await fetch(`${API_URL}/api/platos`);
-  if (!res.ok) throw new Error("Error al cargar los platos");
-  const platos = await res.json();
-  if (!Array.isArray(platos)) return platos;
-  return platos.map((plato: any) => ({
-    ...plato,
-    rubroId: extractRubroId(plato),
-  }));
-};
+import {
+  login,
+  saveAuth,
+  getToken,
+  getUser,
+} from "@/auth/authService";
 
 /**
- * @description Carga un plato por ID para inicializar el formulario de edicion.
- * @param {LoaderFunctionArgs} args - Argumentos del loader con los parametros de ruta.
- * @returns {Promise<unknown>} Plato normalizado con rubroId.
- * @throws {Error} Error al cargar el plato.
+ * @description Obtiene la ruta inicial según el rol del usuario.
+ * @param {string} rol - Rol autenticado.
+ * @returns {string} Ruta inicial permitida.
  */
-const platoLoader = async ({ params }: LoaderFunctionArgs) => {
-  const res = await fetch(`${API_URL}/api/platos/${params.id}`);
-  if (!res.ok) {
-    const text = await res.text();
-    console.error("BACKEND ERROR:", text);
-    throw new Error("Error al cargar el plato");
-  }
-  const plato = await res.json();
-  return {
-    ...plato,
-    rubroId: extractRubroId(plato),
-  };
-};
+const getHomeByRole = (rol: string): string => {
+  switch (rol) {
+    case "admin":
+      return "/cocina/platos";
 
-/**
- * @description Procesa la edicion de un plato y sube una imagen nueva cuando el formulario la incluye.
- * @param {ActionFunctionArgs} args - Argumentos de la action con request y parametros de ruta.
- * @returns {Promise<Response|{error: string}>} Redireccion al catalogo o mensaje de error para la UI.
- */
-const editarPlatoAction = async ({ request, params }: ActionFunctionArgs) => {
-  const id = params.id!;
-  const formData = await request.formData();
+    case "cocinero":
+      return "/cocina";
 
-  console.log("=== EDITAR PLATO ===");
-  console.log("ID:", id);
+    case "cajero":
+      return "/caja";
 
-  const esIlimitado = formData.get("esIlimitado") === "on";
+    case "mozo":
+      return "/mesas";
 
-  const payload = {
-    nombre: formData.get("nombre"),
-    precio: Number(formData.get("precio")),
-    descripcion: formData.get("descripcion"),
-    rubroId: Number(formData.get("rubroId")),
-    esIlimitado,
-    esMenuDelDia: formData.get("esMenuDelDia") === "on",
-    esActivo: formData.get("esActivo") === "on",
-    stockActual: esIlimitado ? null : Number(formData.get("stockActual")),
-  };
-
-  try {
-    const res = await fetch(`${API_URL}/api/platos/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Error al editar plato:", text);
-      return { error: "Error al editar plato" };
-    }
-
-    const imagenFile = formData.get("imagen") as File | null;
-    console.log("Imagen:", imagenFile?.name || "NINGUNA");
-
-    if (imagenFile && imagenFile.size > 0) {
-      const imgFormData = new FormData();
-      imgFormData.append("imagen", imagenFile);
-
-      const imgRes = await fetch(`${API_URL}/api/platos/${id}/imagen`, {
-        method: "POST",
-        body: imgFormData,
-      });
-
-      if (!imgRes.ok) {
-        console.error("ERROR IMG:", await imgRes.text());
-      } else {
-        const data = await imgRes.json();
-        console.log("IMG OK:", data);
-      }
-    }
-
-    return redirect("/cocina/platos");
-  } catch (error) {
-    console.error("Error en editarPlatoAction:", error);
-    return { error: "Error en el proceso" };
+    default:
+      return "/";
   }
 };
 
-/**
- * @description Procesa la creacion de un plato y sube su imagen inicial cuando corresponde.
- * @param {ActionFunctionArgs} args - Argumentos de la action con los datos del formulario.
- * @returns {Promise<Response|{error: string}>} Redireccion al catalogo o mensaje de error para la UI.
- */
-const crearPlatoAction = async ({ request }: ActionFunctionArgs) => {
-  const formData = await request.formData();
-
-  console.log("=== CREAR PLATO ===");
-
-  if (!formData.get("nombre")) {
-    return { error: "El nombre es obligatorio" };
-  }
-
-  const esIlimitado = formData.get("esIlimitado") === "on";
-
-  const payload = {
-    nombre: formData.get("nombre"),
-    precio: Number(formData.get("precio")),
-    descripcion: formData.get("descripcion"),
-    rubroId: Number(formData.get("rubroId")),
-    esIlimitado,
-    esMenuDelDia: formData.get("esMenuDelDia") === "on",
-    esActivo: formData.get("esActivo") === "on",
-    stockActual: esIlimitado ? null : Number(formData.get("stockActual")),
-  };
-
-  try {
-    const res = await fetch(`${API_URL}/api/platos`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Error al crear plato:", text);
-      return { error: "Error al crear plato" };
-    }
-
-    const nuevoPlato = await res.json();
-    console.log("Plato creado con ID:", nuevoPlato.id);
-
-    const imagenFile = formData.get("imagen") as File | null;
-    console.log("Imagen:", imagenFile?.name || "NINGUNA");
-
-    if (imagenFile && imagenFile.size > 0) {
-      const imgFormData = new FormData();
-      imgFormData.append("imagen", imagenFile);
-
-      const imgRes = await fetch(`${API_URL}/api/platos/${nuevoPlato.id}/imagen`, {
-        method: "POST",
-        body: imgFormData,
-      });
-
-      if (!imgRes.ok) {
-        console.error("ERROR IMG:", await imgRes.text());
-      } else {
-        const data = await imgRes.json();
-        console.log("IMG OK:", data);
-      }
-    }
-
-    return redirect("/cocina/platos");
-  } catch (error) {
-    console.error("Error en crearPlatoAction:", error);
-    return { error: "Error al crear plato" };
-  }
-};
 /**
  * @description Protege rutas privadas redirigiendo al login si no existe token.
  */
 const authLoader = async () => {
-  const token = localStorage.getItem("token");
+  const token = getToken();
 
   if (!token) {
     return redirect("/login");
@@ -197,16 +63,321 @@ const authLoader = async () => {
 };
 
 /**
+ * @description Redirecciona según estado de autenticación y rol.
+ */
+const rootLoader = async () => {
+  const token = getToken();
+
+  if (!token) {
+    return redirect("/login");
+  }
+
+  const user = getUser();
+
+  return redirect(
+    getHomeByRole(user?.rol || "")
+  );
+};
+
+/**
  * @description Evita ingresar al login si ya existe una sesión activa.
  */
 const loginLoader = async () => {
-  const token = localStorage.getItem("token");
+  const token = getToken();
 
   if (token) {
-    return redirect("/cocina");
+    const user = getUser();
+
+    return redirect(
+      getHomeByRole(user?.rol || "")
+    );
   }
 
   return null;
+};
+
+/**
+ * @description Carga el listado de platos y normaliza el identificador de rubro recibido desde el backend.
+ * @returns {Promise<unknown>} Listado de platos normalizado o respuesta original si no es un arreglo.
+ * @throws {Error} Error al cargar los platos.
+ */
+const platosLoader = async () => {
+  const res = await authFetch("/api/platos");
+
+  if (!res.ok) {
+    throw new Error("Error al cargar los platos");
+  }
+
+  const platos = await res.json();
+
+  if (!Array.isArray(platos)) {
+    return platos;
+  }
+
+  return platos.map((plato: any) => ({
+    ...plato,
+    rubroId: extractRubroId(plato),
+  }));
+};
+
+/**
+ * @description Carga un plato por ID para inicializar el formulario de edición.
+ * @param {LoaderFunctionArgs} args - Argumentos del loader con los parámetros de ruta.
+ * @returns {Promise<unknown>} Plato normalizado con rubroId.
+ * @throws {Error} Error al cargar el plato.
+ */
+const platoLoader = async ({
+  params,
+}: LoaderFunctionArgs) => {
+  const res = await authFetch(
+    `/api/platos/${params.id}`
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+
+    console.error("BACKEND ERROR:", text);
+
+    throw new Error("Error al cargar el plato");
+  }
+
+  const plato = await res.json();
+
+  return {
+    ...plato,
+    rubroId: extractRubroId(plato),
+  };
+};
+
+/**
+ * @description Procesa la edición de un plato y sube una imagen nueva cuando el formulario la incluye.
+ * @param {ActionFunctionArgs} args - Argumentos de la action con request y parámetros de ruta.
+ * @returns {Promise<Response|{error: string}>} Redirección al catálogo o mensaje de error para la UI.
+ */
+const editarPlatoAction = async ({
+  request,
+  params,
+}: ActionFunctionArgs) => {
+  const id = params.id!;
+
+  const formData = await request.formData();
+
+  console.log("=== EDITAR PLATO ===");
+  console.log("ID:", id);
+
+  const esIlimitado =
+    formData.get("esIlimitado") === "on";
+
+  const payload = {
+    nombre: formData.get("nombre"),
+    precio: Number(formData.get("precio")),
+    descripcion: formData.get("descripcion"),
+    rubroId: Number(formData.get("rubroId")),
+    esIlimitado,
+    esMenuDelDia:
+      formData.get("esMenuDelDia") === "on",
+    esActivo:
+      formData.get("esActivo") === "on",
+    stockActual: esIlimitado
+      ? null
+      : Number(formData.get("stockActual")),
+  };
+
+  try {
+    const res = await authFetch(
+      `/api/platos/${id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+
+      console.error(
+        "Error al editar plato:",
+        text
+      );
+
+      return {
+        error: "Error al editar plato",
+      };
+    }
+
+    const imagenFile =
+      formData.get("imagen") as File | null;
+
+    console.log(
+      "Imagen:",
+      imagenFile?.name || "NINGUNA"
+    );
+
+    if (
+      imagenFile &&
+      imagenFile.size > 0
+    ) {
+      const imgFormData = new FormData();
+
+      imgFormData.append(
+        "imagen",
+        imagenFile
+      );
+
+      const imgRes = await authFetch(
+        `/api/platos/${id}/imagen`,
+        {
+          method: "POST",
+          body: imgFormData,
+        }
+      );
+
+      if (!imgRes.ok) {
+        console.error(
+          "ERROR IMG:",
+          await imgRes.text()
+        );
+      } else {
+        const data = await imgRes.json();
+
+        console.log("IMG OK:", data);
+      }
+    }
+
+    return redirect("/cocina/platos");
+  } catch (error) {
+    console.error(
+      "Error en editarPlatoAction:",
+      error
+    );
+
+    return {
+      error: "Error en el proceso",
+    };
+  }
+};
+
+/**
+ * @description Procesa la creación de un plato y sube su imagen inicial cuando corresponde.
+ * @param {ActionFunctionArgs} args - Argumentos de la action con los datos del formulario.
+ * @returns {Promise<Response|{error: string}>} Redirección al catálogo o mensaje de error para la UI.
+ */
+const crearPlatoAction = async ({
+  request,
+}: ActionFunctionArgs) => {
+  const formData = await request.formData();
+
+  console.log("=== CREAR PLATO ===");
+
+  if (!formData.get("nombre")) {
+    return {
+      error: "El nombre es obligatorio",
+    };
+  }
+
+  const esIlimitado =
+    formData.get("esIlimitado") === "on";
+
+  const payload = {
+    nombre: formData.get("nombre"),
+    precio: Number(formData.get("precio")),
+    descripcion: formData.get("descripcion"),
+    rubroId: Number(formData.get("rubroId")),
+    esIlimitado,
+    esMenuDelDia:
+      formData.get("esMenuDelDia") === "on",
+    esActivo:
+      formData.get("esActivo") === "on",
+    stockActual: esIlimitado
+      ? null
+      : Number(formData.get("stockActual")),
+  };
+
+  try {
+    const res = await authFetch(
+      `/api/platos`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+
+      console.error(
+        "Error al crear plato:",
+        text
+      );
+
+      return {
+        error: "Error al crear plato",
+      };
+    }
+
+    const nuevoPlato = await res.json();
+
+    console.log(
+      "Plato creado con ID:",
+      nuevoPlato.id
+    );
+
+    const imagenFile =
+      formData.get("imagen") as File | null;
+
+    console.log(
+      "Imagen:",
+      imagenFile?.name || "NINGUNA"
+    );
+
+    if (
+      imagenFile &&
+      imagenFile.size > 0
+    ) {
+      const imgFormData = new FormData();
+
+      imgFormData.append(
+        "imagen",
+        imagenFile
+      );
+
+      const imgRes = await authFetch(
+        `/api/platos/${nuevoPlato.id}/imagen`,
+        {
+          method: "POST",
+          body: imgFormData,
+        }
+      );
+
+      if (!imgRes.ok) {
+        console.error(
+          "ERROR IMG:",
+          await imgRes.text()
+        );
+      } else {
+        const data = await imgRes.json();
+
+        console.log("IMG OK:", data);
+      }
+    }
+
+    return redirect("/cocina/platos");
+  } catch (error) {
+    console.error(
+      "Error en crearPlatoAction:",
+      error
+    );
+
+    return {
+      error: "Error al crear plato",
+    };
+  }
 };
 
 /**
@@ -218,140 +389,98 @@ const loginAction = async ({
   const formData = await request.formData();
 
   const legajo = formData.get("legajo");
-  const password = formData.get("password");
+  const password =
+    formData.get("password");
 
   if (!legajo || !password) {
     return {
-      error: "Todos los campos son obligatorios",
+      error:
+        "Todos los campos son obligatorios",
     };
   }
 
   try {
-    const response = await fetch(
-      `${API_URL}/api/usuarios/login`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          legajo,
-          password,
-        }),
-      },
-    );
+    const data = await login({
+      legajo: String(legajo),
+      password: String(password),
+    });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return {
-        error:
-          data.error ||
-          "Credenciales inválidas",
-      };
-    }
-
-    /**
-     * Persistencia de sesión.
-     */
-    localStorage.setItem(
-      "token",
+    saveAuth(
       data.token,
+      data.usuario
     );
 
-    localStorage.setItem(
-      "user",
-      JSON.stringify(data.usuario),
+    return redirect(
+      getHomeByRole(data.usuario.rol)
     );
-
-    /**
-     * Redirección según rol.
-     */
-    switch (data.usuario.rol) {
-      case "admin":
-        return redirect("/cocina/platos");
-
-      case "cocina":
-        return redirect("/cocina");
-
-      default:
-        return redirect("/");
-    }
   } catch (error) {
     console.error(error);
 
     return {
       error:
-        "Error de conexión con el servidor",
+        error instanceof Error
+          ? error.message
+          : "Error de conexión con el servidor",
     };
   }
 };
 
-/**
- * @description Redirecciona segun estado de autenticacion.
- */
-const rootLoader = async () => {
-  const token = localStorage.getItem("token");
+export const router =
+  createBrowserRouter([
+    /**
+     * Rutas públicas.
+     */
+    {
+      path: "/login",
+      element: <LoginPage />,
+      loader: loginLoader,
+      action: loginAction,
+    },
 
-  if (token) {
-    return redirect("/cocina");
-  }
+    /**
+     * Rutas protegidas.
+     */
+    {
+      element: <AppLayout />,
+      loader: authLoader,
 
-  return redirect("/login");
-};
+      children: [
+        {
+          path: "/",
+          loader: rootLoader,
+        },
 
-export const router = createBrowserRouter([
-  /**
-   * Rutas publicas.
-   */
-  {
-    path: "/login",
-    element: <LoginPage />,
-    loader: loginLoader,
-    action: loginAction,
-  },
+        {
+          path: "/cocina",
+          element: <CocinaPage />,
+        },
 
-  /**
-   * Rutas protegidas.
-   */
-  {
-    element: <AppLayout />,
-    loader: authLoader,
+        {
+          path: "/cocina/platos",
+          element: <PlatosPage />,
+          loader: platosLoader,
+          errorElement: <ErrorPage />,
+        },
 
-    children: [
-      {
-  path: "/",
-  loader: rootLoader,
-},
+        {
+          path: "/cocina/platos/nuevo",
+          element: <PlatoFormPage />,
+          action: crearPlatoAction,
+          errorElement: <ErrorPage />,
+        },
 
-      { path: "/cocina", element: <CocinaPage /> },
+        {
+          path: "/configuracion",
+          element: <ConfigPage />,
+        },
 
-      {
-        path: "/cocina/platos",
-        element: <PlatosPage />,
-        loader: platosLoader,
-        errorElement: <ErrorPage />,
-      },
-
-      {
-        path: "/cocina/platos/nuevo",
-        element: <PlatoFormPage />,
-        action: crearPlatoAction,
-        errorElement: <ErrorPage />,
-      },
-
-      {
-        path: "/configuracion",
-        element: <ConfigPage />,
-      },
-
-      {
-        path: "/cocina/platos/:id",
-        element: <PlatoFormPage />,
-        loader: platoLoader,
-        action: editarPlatoAction,
-        errorElement: <ErrorPage />,
-      },
-    ],
-  },
-]);
+        {
+          path: "/cocina/platos/:id",
+          element: <PlatoFormPage />,
+          loader: platoLoader,
+          action: editarPlatoAction,
+          errorElement: <ErrorPage />,
+        },
+      ],
+    },
+  ]);

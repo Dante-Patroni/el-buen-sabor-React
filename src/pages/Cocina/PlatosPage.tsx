@@ -3,6 +3,7 @@ import { Button } from "../../components/ui/Button";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import type { Plato, Rubro } from "../../types";
+import { authFetch } from "@/lib/authFetch";
 
 /**
  * @description Renderiza el catalogo de platos con filtros por categoria y estado.
@@ -19,9 +20,18 @@ export const PlatosPage = () => {
 
   // Fetch de rubros para los filtros
   useEffect(() => {
-    fetch(`${API_URL}/api/rubros`)
-      .then(res => res.json())
-      .then(data => setRubros(data));
+    authFetch("/api/rubros")
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error("Error al cargar rubros");
+        }
+
+        return res.json();
+      })
+      .then((data) => setRubros(data))
+      .catch((error) => {
+        console.error(error);
+      });
   }, []);
 
   // Genera opciones de filtro incluyendo subrubros

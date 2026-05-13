@@ -3,6 +3,7 @@ import type { ItemPedido, Pedido } from "../../modules/cocina/types";
 import { useState, useEffect } from "react";
 import { Button } from "../../components/ui/Button";
 import { io } from "socket.io-client";
+import { authFetch } from "@/lib/authFetch";
 
 /**
  * @description Renderiza el monitor de cocina en tiempo real con filtros y columnas por estado.
@@ -48,28 +49,26 @@ export const CocinaPage = () => {
     const fetchPedidos = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem("token") || "";
-            const response = await fetch(`${API_URL}/api/cocina/pedidos`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await authFetch("/api/cocina/pedidos");
+
 
             if (response.ok) {
                 const data = await response.json();
 
 
 
-                    const fetched: Pedido[] = data.data
-                        .map((p: any) => ({
-                            ...p,
-                            estado: mapEstado(p.estado),
-                            hora: new Date(p.createdAt || new Date()).toLocaleTimeString("es-AR"),
-                            items: (p.items || p.detalles || p.DetallePedidos || []).map((item: any) => ({
-                                nombre: item.plato?.nombre || item.nombre || item.Plato?.nombre || "",
-                                cantidad: item.cantidad,
-                                aclaracion: item.aclaracion || item.observacion || "",
-                            })),
-                        }))
-                        .filter((p: any) => p.estado !== "entregado");
+                const fetched: Pedido[] = data.data
+                    .map((p: any) => ({
+                        ...p,
+                        estado: mapEstado(p.estado),
+                        hora: new Date(p.createdAt || new Date()).toLocaleTimeString("es-AR"),
+                        items: (p.items || p.detalles || p.DetallePedidos || []).map((item: any) => ({
+                            nombre: item.plato?.nombre || item.nombre || item.Plato?.nombre || "",
+                            cantidad: item.cantidad,
+                            aclaracion: item.aclaracion || item.observacion || "",
+                        })),
+                    }))
+                    .filter((p: any) => p.estado !== "entregado");
 
                 // Actualización directa para sincronizar con la DB (evita ghost orders del localStorage)
                 setPedidos(fetched);
@@ -86,12 +85,17 @@ export const CocinaPage = () => {
     // 📡 Carga inicial de pedidos
     useEffect(() => {
         fetchPedidos();
-    }, [API_URL]);
+    }, []);
 
     // // ⚡ WebSocket para actualizaciones en tiempo real
     useEffect(() => {
-        const socket = io(`${API_URL}`, {
+        const token = localStorage.getItem("token");
+
+        const socket = io(API_URL, {
             transports: ["websocket", "polling"],
+            auth: {
+                token,
+            },
         });
 
 
@@ -100,7 +104,7 @@ export const CocinaPage = () => {
             console.log("🟢 WebSocket conectado");
         });
 
-        // ✅ FIX 1: evitar duplicados
+        // ✅ evitar duplicados
         socket.on("nuevo-pedido", (nuevoPedido: Pedido) => {
             setPedidos((prev) => {
                 const existe = prev.some(p => p.id === nuevoPedido.id);
@@ -121,15 +125,15 @@ export const CocinaPage = () => {
             });
         });
 
-        socket.on("estado-pedido-actualizado", ({ id, estado }) => {
+        socket.on("pedido-estado-actualizado", ({ pedidoId, estado }) => {
             const estadoMapeado = mapEstado(estado);
 
             setPedidos((prev) => {
                 if (estadoMapeado === "entregado") {
-                    return prev.filter(p => p.id !== id);
+                    return prev.filter(p => p.id !== pedidoId);
                 }
                 return prev.map((p) =>
-                    p.id === id ? { ...p, estado: estadoMapeado as any } : p
+                    p.id === pedidoId ? { ...p, estado: estadoMapeado as any } : p
                 );
             });
         });
@@ -151,7 +155,7 @@ export const CocinaPage = () => {
                 }
 
                 const existe = prev.some(p => p.id === pedidoActualizado.id);
-                
+
                 const itemsMapeados: ItemPedido[] =
                     rawItems.length > 0
                         ? rawItems.map((item: any) => ({
@@ -197,11 +201,18 @@ export const CocinaPage = () => {
         setPedidos(prev => prev.filter(p => p.id !== id));
 
         try {
-            const response = await fetch(`${API_URL}/api/pedidos/${id}/estado`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ estado: "entregado" })
-            });
+            const response = await authFetch(
+                `/api/pedidos/${id}/estado`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        estado: "entregado",
+                    }),
+                }
+            );
 
             if (!response.ok) {
                 console.error("Error al marcar como entregado en el backend.");
@@ -233,11 +244,18 @@ export const CocinaPage = () => {
             const estadoBackend = nuevoEstado === "preparacion" ? "en_preparacion" :
                 nuevoEstado === "listo" ? "listo" : "pendiente";
 
-            const response = await fetch(`${API_URL}/api/pedidos/${id}/estado`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ estado: estadoBackend })
-            });
+            const response = await authFetch(
+                `/api/pedidos/${id}/estado`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        estado: estadoBackend,
+                    }),
+                }
+            );
 
             if (!response.ok) {
                 console.error("El backend rechazó el cambio de estado.");

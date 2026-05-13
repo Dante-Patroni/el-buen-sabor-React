@@ -11,9 +11,11 @@ export interface LoginCredentials {
  */
 export interface AuthUser {
   id: number;
-  username: string;
+  nombre: string;
+  apellido: string;
   legajo: string;
   rol: string;
+  activo: boolean;
 }
 
 /**

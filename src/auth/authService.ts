@@ -3,8 +3,8 @@ import type {
   LoginResponse,
   AuthUser,
 } from "./types";
+import { authFetch } from "@/lib/authFetch";
 
-const API_URL = import.meta.env.VITE_API_URL;
 
 /**
  * @description Realiza login contra el backend y devuelve JWT + usuario.
@@ -12,7 +12,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 export async function login(
   credentials: LoginCredentials,
 ): Promise<LoginResponse> {
-  const response = await fetch(`${API_URL}/api/usuarios/login`, {
+  const response = await authFetch(`/api/usuarios/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -46,6 +46,15 @@ export function saveAuth(token: string, user: AuthUser): void {
 export function getToken(): string | null {
   return localStorage.getItem("token");
 }
+/**
+ * @description Obtiene el usuario autenticado desde localStorage.
+ * @returns Usuario autenticado o null.
+ */
+export const getUser = () => {
+  const user = localStorage.getItem("user");
+
+  return user ? JSON.parse(user) : null;
+};
 
 /**
  * @description Obtiene el usuario autenticado desde localStorage.
@@ -77,4 +86,16 @@ export function isAuthenticated(): boolean {
 export function logout(): void {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
+}
+
+/**
+ * @description Genera headers autenticados para fetch.
+ */
+export function authHeaders(): HeadersInit {
+  const token = getToken();
+
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
 }
