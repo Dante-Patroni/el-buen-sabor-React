@@ -26,9 +26,9 @@ import {
 } from "@/auth/authService";
 
 /**
- * @description Obtiene la ruta inicial según el rol del usuario.
- * @param {string} rol - Rol autenticado.
- * @returns {string} Ruta inicial permitida.
+ * Determina la ruta de inicio (Dashboard) correspondiente a cada rol de usuario.
+ * @param {string} rol - El rol del usuario obtenido del sistema de autenticación.
+ * @returns {string} El path absoluto de la ruta inicial.
  */
 const getHomeByRole = (rol: string): string => {
   switch (rol) {
@@ -50,7 +50,9 @@ const getHomeByRole = (rol: string): string => {
 };
 
 /**
- * @description Protege rutas privadas redirigiendo al login si no existe token.
+ * Loader de seguridad global. 
+ * Verifica la existencia de una sesión activa antes de permitir el acceso a rutas hijas.
+ * @returns {null | Response} Redirige a /login si no hay token.
  */
 const authLoader = async () => {
   const token = getToken();
@@ -63,7 +65,8 @@ const authLoader = async () => {
 };
 
 /**
- * @description Redirecciona según estado de autenticación y rol.
+ * Loader de inicialización de la aplicación.
+ * Evalúa el rol del usuario autenticado para redirigirlo a su página principal correspondiente.
  */
 const rootLoader = async () => {
   const token = getToken();
@@ -80,7 +83,8 @@ const rootLoader = async () => {
 };
 
 /**
- * @description Evita ingresar al login si ya existe una sesión activa.
+ * Loader para la página de acceso.
+ * Si el usuario ya posee una sesión válida, impide el re-acceso al login.
  */
 const loginLoader = async () => {
   const token = getToken();
