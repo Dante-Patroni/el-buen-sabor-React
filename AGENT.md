@@ -245,3 +245,226 @@ src/
 | Usar `localStorage` | Consistente con el uso actual en `CocinaPage.tsx` |
 | No agregar dependencias npm | Todo se hace con `fetch` nativo |
 | Mantener JSDoc | Cada función debe tener su `@description` |
+
+---
+
+# PARTE 2: Especificación — ABM de Usuarios
+
+## Objetivo
+
+Implementar el módulo completo de ABM de Usuarios dentro del frontend, respetando:
+- Arquitectura actual del proyecto
+- Convenciones TypeScript y de código
+- Sistema de autenticación JWT existente
+- Estructura de páginas y tipos
+
+---
+
+## Estructura de Carpetas
+
+Crear la siguiente estructura:
+
+```
+src/pages/Usuarios/
+├── UsuariosPage.tsx           # Listado de usuarios
+└── UsuarioFormPage.tsx        # Crear/Editar usuario
+
+Opcional:
+src/modules/usuarios/          # Si hay componentes auxiliares
+├── components/
+└── types.ts
+```
+
+---
+
+## Rutas a Implementar
+
+| Funcionalidad | Ruta | Método |
+|---|---|---|
+| **Listado** | `/usuarios` | GET |
+| **Crear** | `/usuarios/nuevo` | POST |
+| **Editar** | `/usuarios/:id` | PUT |
+| **Activar/Desactivar** | `PATCH /api/usuarios/:id/estado` | Backend |
+
+---
+
+## Interfaz de Usuario (Tipo)
+
+```typescript
+export interface Usuario {
+  id: number;
+  username: string;
+  legajo: string;
+  rol: "admin" | "cocinero" | "cajero" | "mozo";
+  activo: boolean;
+  email?: string;
+  // Agregar según backend
+}
+```
+
+---
+
+## Backend - Endpoints Esperados
+
+| Endpoint | Método | Descripción |
+|---|---|---|
+| `/api/usuarios` | GET | Obtener todos los usuarios |
+| `/api/usuarios/:id` | GET | Obtener un usuario |
+| `/api/usuarios` | POST | Crear usuario |
+| `/api/usuarios/:id` | PUT | Editar usuario |
+| `/api/usuarios/:id/estado` | PATCH | Activar/Desactivar usuario |
+
+---
+
+## React Router - Loaders y Actions
+
+### usuariosLoader
+```typescript
+const usuariosLoader = async () => {
+  const res = await authFetch("/api/usuarios");
+  
+  if (!res.ok) {
+    throw new Error("Error al cargar usuarios");
+  }
+  
+  return res.json();
+};
+```
+
+### crearUsuarioAction
+```typescript
+const crearUsuarioAction = async ({ request }: ActionFunction) => {
+  if (request.method !== "POST") return null;
+  
+  const formData = await request.formData();
+  const payload = {
+    username: formData.get("username"),
+    legajo: formData.get("legajo"),
+    password: formData.get("password"),
+    rol: formData.get("rol"),
+  };
+  
+  const res = await authFetch("/api/usuarios", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  
+  if (!res.ok) {
+    return { error: "Error al crear usuario" };
+  }
+  
+  return redirect("/usuarios");
+};
+```
+
+### editarUsuarioAction
+Seguir el mismo patrón que `crearUsuarioAction`, pero con PUT.
+
+---
+
+## Validaciones Frontend
+
+**En el formulario:**
+- ✓ `username` requerido (no vacío)
+- ✓ `legajo` requerido (no vacío)
+- ✓ `password` requerido **solo al crear**
+- ✓ `rol` válido (select con: admin, cocinero, cajero, mozo)
+
+**No hacer:**
+- ✗ No guardar ni mostrar passwords
+- ✗ No loguear tokens
+- ✗ No permitir inputs libres para roles
+
+---
+
+## Tabla en UsuariosPage
+
+Mostrar columnas:
+
+| Usuario | Legajo | Rol | Estado | Acciones |
+|---|---|---|---|---|
+
+**Estado visual:**
+- **Activo** → Badge verde
+- **Inactivo** → Badge rojo
+
+**Acciones:**
+- Editar (enlace a `/usuarios/:id`)
+- Activar/Desactivar (PATCH al endpoint correspondiente)
+
+---
+
+## Protección de Acceso
+
+**Solo el rol `admin` puede acceder al ABM.**
+
+En el loader:
+```typescript
+const usuariosLoader = async () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  
+  if (user?.rol !== "admin") {
+    return redirect("/");
+  }
+  
+  // ... resto del loader
+};
+```
+
+---
+
+## Seguridad
+
+**El frontend NUNCA debe:**
+- Guardar o mostrar passwords
+- Loguear tokens en consola
+- Realizar requests sin `authFetch`
+- Permitir ediciones sin validación
+
+---
+
+## Coherencia con Proyecto
+
+**Seguir exactamente el patrón de:**
+- `PlatosPage.tsx` (listado)
+- `PlatoFormPage.tsx` (formulario)
+- `CocinaPage.tsx` (uso de socket y datos)
+
+**Reutilizar:**
+- Componentes `Button`, `Input`, `Label`
+- Estilos Tailwind (cards, rounded-xl)
+- Layout `AppLayout`
+
+---
+
+## Restricciones Obligatorias
+
+| Restricción | Detalle |
+|---|---|
+| ✓ TypeScript estricto | No usar `any` |
+| ✓ JSDoc en funciones | Cada función con `@description` |
+| ✓ Imports absolutos | Usar `@/...` |
+| ✓ authFetch para requests | No `fetch` directo |
+| ✓ No nuevas dependencias | Todo con tools existentes |
+
+---
+
+## Checklist de Implementación
+
+- [ ] Crear `src/pages/Usuarios/UsuariosPage.tsx`
+- [ ] Crear `src/pages/Usuarios/UsuarioFormPage.tsx`
+- [ ] Agregar interfaz `Usuario` en `src/types/index.ts`
+- [ ] Agregar loaders y actions en `src/app/routes.tsx`
+- [ ] Agregar rutas en array `children` del router
+- [ ] Agregar link en `src/components/layout/Sidebar.tsx`
+- [ ] Probar listado, crear, editar, activar/desactivar
+- [ ] Validar protección de rol `admin`
+- [ ] Validar uso de `authFetch`
+
+---
+
+## Notas Finales
+
+- **Priorizar:** Estabilidad > Coherencia > Legibilidad
+- **NO sobreingenierizar** — mantener simple y mantenible
+- **Explicabilidad:** El código debe ser claro para la defensa oral

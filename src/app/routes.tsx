@@ -14,6 +14,7 @@ import { LoginPage } from "../pages/Auth/LoginPage";
 
 import { ErrorPage } from "../pages/Errores/ErrorPage";
 import { ConfigPage } from "../pages/Configuracion/ConfigPage";
+import { CajaPage } from "../pages/Caja/CajaPage";
 
 import { extractRubroId } from "@/lib/utils";
 import { authFetch } from "@/lib/authFetch";
@@ -470,6 +471,12 @@ export const router =
           path: "/cocina/platos/nuevo",
           element: <PlatoFormPage />,
           action: crearPlatoAction,
+          errorElement: <ErrorPage />,
+        },
+
+        {
+          path: "/caja",
+          element: <CajaPage />,
           errorElement: <ErrorPage />,
         },
 

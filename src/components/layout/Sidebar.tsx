@@ -32,6 +32,11 @@ export const Sidebar = () => {
                     <span className="text-sm font-medium">Monitor de Cocina</span>
                 </Link>
 
+                <Link to="/caja" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
+                    <span className="material-symbols-outlined">point_of_sale</span>
+                    <span className="text-sm">Caja</span>
+                </Link>
+
                 <Link to="/cocina/platos" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
                     <span className="material-symbols-outlined">restaurant_menu</span>
                     <span className="text-sm">Platos</span>
