@@ -15,6 +15,7 @@ type MesaResumen = {
 type PedidoDetalle = {
   id: number;
   cantidad: number;
+  subtotal?: number;
   aclaracion?: string;
   plato?: { nombre?: string };
   nombre?: string;
@@ -222,6 +223,10 @@ export const CajaPage = () => {
       fetchMesas();
     });
 
+    socket.on("mesa-esperando-cobro", () => {
+  fetchMesas();
+});
+
     socket.on("connect_error", (err: any) => {
       console.error("Error de socket en caja:", err.message);
     });
@@ -230,6 +235,7 @@ export const CajaPage = () => {
       socket.off("connect");
       socket.off("ticket-generado");
       socket.off("connect_error");
+      socket.off("mesa-esperando-cobro");
       socket.disconnect();
     };
   }, [selectedMesa]);
