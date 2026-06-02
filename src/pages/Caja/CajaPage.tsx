@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { Button } from "../../components/ui/Button";
 import { authFetch } from "@/lib/authFetch";
@@ -74,6 +74,10 @@ export const CajaPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  // Ref para acceder al valor actual de selectedMesa dentro del socket
+  // sin necesitar re-crear el socket cuando cambia la mesa seleccionada.
+  const selectedMesaRef = useRef<MesaDetalle | null>(null);
+
   const fetchMesas = async () => {
     setError(null);
     setIsLoadingMesas(true);
@@ -111,10 +115,12 @@ export const CajaPage = () => {
       }
 
       const data = await response.json();
+      selectedMesaRef.current = data;   // mantener ref sincronizada
       setSelectedMesa(data);
       setTicket(null);
       setIsClosedByMozo(false);
     } catch (err) {
+      selectedMesaRef.current = null;
       setSelectedMesa(null);
       setIsClosedByMozo(false);
       setError(
@@ -177,6 +183,7 @@ export const CajaPage = () => {
       }
 
       await response.json();
+      selectedMesaRef.current = null;   // limpiar ref al cobrar
       setMessage("Mesa cobrada con éxito");
       setSelectedMesa(null);
       setTicket(null);
@@ -200,7 +207,12 @@ export const CajaPage = () => {
     const API_URL = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
 
+    console.log("🔍 CAJA: Inicializando WebSocket...");
+    console.log("🔍 API_URL:", API_URL);
+    console.log("🔍 Token presente:", !!token);
+
     if (!token) {
+      console.warn("⚠️ CAJA: Sin token, no conectando WebSocket");
       return;
     }
 
@@ -210,35 +222,62 @@ export const CajaPage = () => {
     });
 
     socket.on("connect", () => {
-      console.log("Socket de caja conectado");
+      console.log("✅ Socket de caja conectado");
     });
 
+    // Este evento llega cuando el mozo cierra la mesa desde Flutter/Mozos
+    // y genera el ticket. Sólo actualizamos la UI — NO cobramos.
     socket.on("ticket-generado", (ticketData: any) => {
-      if (selectedMesa?.id === ticketData.mesaId) {
+      console.log("📋 CAJA: Evento 'ticket-generado' recibido", ticketData);
+      // Usamos la ref para evitar stale closure (no recrea el socket)
+      if (selectedMesaRef.current?.id === ticketData.mesaId) {
         setTicket(ticketData);
         setMessage("Ticket generado desde el cierre de mesa por mozo");
         setIsClosedByMozo(true);
       }
-
       fetchMesas();
     });
 
-    socket.on("mesa-esperando-cobro", () => {
-  fetchMesas();
-});
+    // Flutter llama a POST /api/mesas/:id/solicitar-cobro → backend emite este evento.
+    // React sólo debe: refrescar la lista y mostrar una notificación visual.
+    // NUNCA debe invocar cobrarMesa() automáticamente desde aquí.
+    socket.on("mesa-esperando-cobro", (data: any) => {
+      console.log("💰 CAJA: Mesa solicitó cobro (Flutter)", data);
+      // Refrescar lista para que la mesa aparezca con el estado correcto
+      fetchMesas();
+      // Notificación visual (sin auto-cobro)
+      setMessage(
+        `⚠️ Mesa ${data?.mesaId ?? data?.id ?? ""} está esperando cobro`
+      );
+    });
 
     socket.on("connect_error", (err: any) => {
-      console.error("Error de socket en caja:", err.message);
+      console.error("❌ Error de socket en caja:", err.message);
     });
 
     return () => {
+      console.log("🔌 CAJA: Desconectando socket");
       socket.off("connect");
       socket.off("ticket-generado");
       socket.off("connect_error");
       socket.off("mesa-esperando-cobro");
       socket.disconnect();
     };
-  }, [selectedMesa]);
+    // ⚠️ IMPORTANTE: NO incluir selectedMesa en las dependencias.
+    // Si lo hacemos, el socket se destruye y recrea cada vez que el cajero
+    // selecciona una mesa, causando stale closures y pérdida de eventos.
+    // En su lugar usamos selectedMesaRef para leer el valor actual.
+  }, []);
+
+  // Solo mesas que el mozo/Flutter marcó como esperando cobro
+  // Comparación case-insensitive por si el backend cambia el casing
+  const mesasEsperandoCobro = mesas.filter(
+    (m) => m.estado?.toLowerCase() === "esperando_cobro"
+  );
+
+  // La mesa seleccionada está lista para cobrar sólo si tiene el estado correcto
+  const mesaListaParaCobrar =
+    selectedMesa?.estado?.toLowerCase() === "esperando_cobro";
 
   const deliveredPedidos = selectedMesa?.pedidos?.filter(p => p.estado === "entregado") || [];
   const deliveredItems = deliveredPedidos.flatMap(p => p.detalles || []);
@@ -258,7 +297,7 @@ export const CajaPage = () => {
       <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-stone-900">Mesas abiertas</h2>
+            <h2 className="text-lg font-semibold text-stone-900">Esperando cobro</h2>
             <Button
               variant="outline"
               size="sm"
@@ -270,11 +309,11 @@ export const CajaPage = () => {
 
           {isLoadingMesas ? (
             <div className="text-stone-500">Cargando mesas...</div>
-          ) : mesas.length === 0 ? (
-            <div className="text-stone-500">No hay mesas abiertas en este momento.</div>
+          ) : mesasEsperandoCobro.length === 0 ? (
+            <div className="text-stone-500">Ninguna mesa ha solicitado cobro aún.</div>
           ) : (
             <div className="space-y-3">
-              {mesas.map((mesa) => (
+              {mesasEsperandoCobro.map((mesa) => (
                 <button
                   key={mesa.id}
                   type="button"
@@ -290,8 +329,8 @@ export const CajaPage = () => {
                     <strong className="text-stone-900">
                       {mesa.nombre || `Mesa ${mesa.numero ?? mesa.id}`}
                     </strong>
-                    <span className="text-xs text-stone-500 uppercase">
-                      {mesa.estado || "abierta"}
+                    <span className="text-xs font-semibold text-amber-600 uppercase">
+                      Solicita cobro
                     </span>
                   </div>
                   {mesa.mozo?.nombre && (
@@ -455,15 +494,17 @@ export const CajaPage = () => {
                   <Button
                     variant="secondary"
                     className="w-full rounded-2xl py-3 cursor-pointer"
-                    disabled={isLoadingMesa || !selectedMesa}
+                    disabled={isLoadingMesa || !selectedMesa || !mesaListaParaCobrar}
                     onClick={loadTicket}
+                    title={!mesaListaParaCobrar ? "La mesa aún no solicitó cobro" : undefined}
                   >
                     Ver ticket
                   </Button>
                   <Button
                     className="w-full rounded-2xl py-3 cursor-pointer"
-                    disabled={isProcessing || !selectedMesa || isClosedByMozo}
+                    disabled={isProcessing || !selectedMesa || !mesaListaParaCobrar || isClosedByMozo}
                     onClick={cobrarMesa}
+                    title={!mesaListaParaCobrar ? "La mesa aún no solicitó cobro" : undefined}
                   >
                     Cobrar mesa
                   </Button>
