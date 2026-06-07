@@ -1,10 +1,24 @@
 import { Link } from "react-router-dom";
+import { RequirePermiso } from "@/auth/RequirePermiso";
+import {
+  PEDIDO_VER,
+  MESA_VER,
+  TICKET_VER,
+  MESA_COBRAR,
+  PLATO_CREAR,
+  PLATO_MODIFICAR,
+  PLATO_ELIMINAR,
+  USUARIO_VER,
+} from "@/auth/permisos";
+import { useAuth } from "@/auth/AuthContext";
 
 /**
  * @description Renderiza la barra lateral de navegacion principal con accesos de modulo y configuracion.
  * @returns {JSX.Element} Sidebar fija de la aplicacion.
  */
 export const Sidebar = () => {
+    const { user, logout } = useAuth();
+
     return (
         <aside className="h-screen w-64 fixed left-0 top-0 bg-stone-100 dark:bg-stone-900 flex flex-col p-4 z-50">
 
@@ -19,7 +33,7 @@ export const Sidebar = () => {
                         El Buen Sabor
                     </h1>
                     <p className="text-xs font-medium text-stone-500">
-                        Gestión de Restaurante
+                        {user ? `${user.nombre} (${user.rol})` : "Gestión de Restaurante"}
                     </p>
                 </div>
             </div>
@@ -27,20 +41,33 @@ export const Sidebar = () => {
             {/* NAV - Enlaces principales */}
             <nav className="flex-1 space-y-2">
 
-                <Link to="/cocina" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
-                    <span className="material-symbols-outlined">chef_hat</span>
-                    <span className="text-sm font-medium">Monitor de Cocina</span>
-                </Link>
+                <RequirePermiso permisos={[PEDIDO_VER]}>
+                    <Link to="/cocina" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
+                        <span className="material-symbols-outlined">chef_hat</span>
+                        <span className="text-sm font-medium">Monitor de Cocina</span>
+                    </Link>
+                </RequirePermiso>
 
-                <Link to="/caja" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
-                    <span className="material-symbols-outlined">point_of_sale</span>
-                    <span className="text-sm">Caja</span>
-                </Link>
+                <RequirePermiso permisos={[MESA_VER, TICKET_VER, MESA_COBRAR]}>
+                    <Link to="/caja" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
+                        <span className="material-symbols-outlined">point_of_sale</span>
+                        <span className="text-sm">Caja</span>
+                    </Link>
+                </RequirePermiso>
 
-                <Link to="/cocina/platos" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
-                    <span className="material-symbols-outlined">restaurant_menu</span>
-                    <span className="text-sm">Platos</span>
-                </Link>
+                <RequirePermiso permisos={[PLATO_CREAR, PLATO_MODIFICAR, PLATO_ELIMINAR]}>
+                    <Link to="/cocina/platos" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
+                        <span className="material-symbols-outlined">restaurant_menu</span>
+                        <span className="text-sm">Platos</span>
+                    </Link>
+                </RequirePermiso>
+
+                <RequirePermiso permisos={[USUARIO_VER]}>
+                    <Link to="/administracion/usuarios" className="flex items-center gap-3 px-4 py-3 text-stone-600 dark:text-stone-400 hover:text-orange-800 hover:bg-white/50 transition">
+                        <span className="material-symbols-outlined">group</span>
+                        <span className="text-sm">Usuarios</span>
+                    </Link>
+                </RequirePermiso>
 
                 {/* CONFIG y Logout */}
                 <div className="mt-auto">
@@ -58,12 +85,7 @@ export const Sidebar = () => {
                     </Link>
 
                     <button
-                        onClick={() => {
-                            localStorage.removeItem("token");
-                            localStorage.removeItem("user");
-
-                            window.location.href = "/login";
-                        }}
+                        onClick={logout}
                         className="flex w-full items-center gap-3 rounded px-4 py-3 text-red-600 hover:bg-red-100 cursor-pointer"
                     >
                         <span className="material-symbols-outlined">

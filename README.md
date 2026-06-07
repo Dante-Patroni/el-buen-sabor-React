@@ -1,73 +1,73 @@
-# React + TypeScript + Vite
+# El Buen Sabor — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema de gestión para el restaurante "El Buen Sabor". Esta aplicación provee las interfaces necesarias para la administración de pedidos en tiempo real, gestión de mesas (Caja), catálogo de platos y administración de usuarios, todo protegido mediante un sistema de control de acceso basado en roles (RBAC).
 
-Currently, two official plugins are available:
+## Stack Tecnológico
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 19**
+- **TypeScript**
+- **Vite**
+- **React Router v7 (Data Mode)**
+- **Tailwind CSS v4**
+- **Socket.io-client** (Comunicación en tiempo real con el backend)
 
-## React Compiler
+## Características Principales
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🔐 Seguridad y Autenticación (RBAC)
+El sistema implementa JWT para la autenticación y un robusto control de acceso basado en roles (RBAC). Dependiendo de los permisos asignados a cada rol (ej. `superadmin`, `admin`, `cocinero`, `cajero`, `mozo`), la interfaz se adapta dinámicamente:
+- **Protección de Rutas:** Interceptores de React Router (`authLoader`) y guardias de componentes (`<RequirePermiso>`).
+- **Navegación Condicional:** La barra lateral solo muestra los módulos a los que el usuario tiene acceso.
+- **Botones y Acciones:** Botones sensibles como "Cobrar Mesa" o "Agregar Plato" se ocultan a usuarios sin los permisos requeridos (`MESA_COBRAR`, `PLATO_CREAR`, etc.).
 
-## Expanding the ESLint configuration
+### 👥 Administración de Usuarios (CRUD)
+Panel dedicado para superadministradores y administradores:
+- Listado de usuarios activos e inactivos.
+- Creación y edición de perfiles (asignación de legajo, contraseña y rol).
+- Baja lógica de usuarios en lugar de eliminación física.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 🍳 Monitor de Cocina
+Panel en tiempo real conectado vía WebSockets (`socket.io`):
+- Visualización de pedidos entrantes.
+- Cambio de estados de pedidos (ej. de "Pendiente" a "En Preparación" o "Terminado").
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 📦 Catálogo de Platos
+Módulo de administración del menú:
+- Listado filtrable por rubro y estado de disponibilidad.
+- Alta, baja y modificación de platos, incluyendo la carga de imágenes (`multipart/form-data`).
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 💰 Módulo de Caja
+Control operativo del salón:
+- Monitoreo en tiempo real del estado de las mesas.
+- Emisión de tickets de consumo.
+- Cobro y cierre de mesas.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Arquitectura y Patrones
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+El proyecto utiliza extensivamente las nuevas características de **React Router v7 (Data Mode)**:
+- **Loaders:** Para la obtención de datos (fetching) de manera asíncrona antes de renderizar la ruta.
+- **Actions:** Para procesar mutaciones (crear, actualizar, borrar) enviadas mediante componentes `<Form>` nativos de react-router.
+- Todo centralizado en `src/app/routes.tsx`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Configuración y Ejecución
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Requisitos Previos
+- Node.js (v18+)
+- El [backend de El Buen Sabor](https://github.com/tu-repositorio-backend) corriendo localmente.
+
+### Pasos
+1. Clonar el repositorio.
+2. Instalar las dependencias:
+   ```bash
+   npm install
+   ```
+3. Crear un archivo `.env` en la raíz del proyecto configurando la URL del backend:
+   ```env
+   VITE_API_URL=http://localhost:3000
+   ```
+4. Iniciar el servidor de desarrollo:
+   ```bash
+   npm run dev
+   ```
+
+## Documentación para Agentes (IA)
+Si estás utilizando un agente autónomo de código (AI) para trabajar sobre este repositorio, asegúrate de indicarle que lea el archivo `AGENT.md` incluido en la raíz. Dicho documento provee el contexto arquitectónico, reglas de negocio y restricciones técnicas requeridas para mantener la consistencia del proyecto.

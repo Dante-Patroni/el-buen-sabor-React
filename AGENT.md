@@ -248,223 +248,54 @@ src/
 
 ---
 
-# PARTE 2: Especificación — ABM de Usuarios
+# PARTE 2: Especificación — Rediseño UI/UX de Usuarios (CRUD)
 
-## Objetivo
+## Objetivo para el Agente del Compañero
 
-Implementar el módulo completo de ABM de Usuarios dentro del frontend, respetando:
-- Arquitectura actual del proyecto
-- Convenciones TypeScript y de código
-- Sistema de autenticación JWT existente
-- Estructura de páginas y tipos
+**¡IMPORTANTE!** Toda la lógica subyacente del ABM de Usuarios y el sistema de permisos (RBAC) **YA ESTÁ IMPLEMENTADA**. Esto incluye los Loaders, Actions, el enrutamiento (`routes.tsx`), la protección de acceso (`RequirePermiso.tsx`), las llamadas a la API y el menú lateral (`Sidebar.tsx`).
+
+Tu único trabajo como agente de interfaz es **REDISEÑAR** visualmente las páginas de Usuarios para darles un aspecto premium, dinámico y especial, según la visión del desarrollador a cargo.
 
 ---
 
-## Estructura de Carpetas
+## Archivos a Modificar
 
-Crear la siguiente estructura:
+Solo debes trabajar sobre la capa de presentación (JSX y clases de Tailwind) de los siguientes archivos:
 
-```
-src/pages/Usuarios/
-├── UsuariosPage.tsx           # Listado de usuarios
-└── UsuarioFormPage.tsx        # Crear/Editar usuario
-
-Opcional:
-src/modules/usuarios/          # Si hay componentes auxiliares
-├── components/
-└── types.ts
-```
+1. **`src/pages/Administracion/UsuariosPage.tsx`** (Listado)
+2. **`src/pages/Administracion/UsuarioFormPage.tsx`** (Creación y Edición)
 
 ---
 
-## Rutas a Implementar
+## Reglas Críticas para el Rediseño
 
-| Funcionalidad | Ruta | Método |
-|---|---|---|
-| **Listado** | `/usuarios` | GET |
-| **Crear** | `/usuarios/nuevo` | POST |
-| **Editar** | `/usuarios/:id` | PUT |
-| **Activar/Desactivar** | `PATCH /api/usuarios/:id/estado` | Backend |
+Para no romper el funcionamiento actual, **DEBES RESPETAR** las siguientes reglas:
 
----
-
-## Interfaz de Usuario (Tipo)
-
-```typescript
-export interface Usuario {
-  id: number;
-  username: string;
-  legajo: string;
-  rol: "admin" | "cocinero" | "cajero" | "mozo";
-  activo: boolean;
-  email?: string;
-  // Agregar según backend
-}
-```
-
----
-
-## Backend - Endpoints Esperados
-
-| Endpoint | Método | Descripción |
-|---|---|---|
-| `/api/usuarios` | GET | Obtener todos los usuarios |
-| `/api/usuarios/:id` | GET | Obtener un usuario |
-| `/api/usuarios` | POST | Crear usuario |
-| `/api/usuarios/:id` | PUT | Editar usuario |
-| `/api/usuarios/:id/estado` | PATCH | Activar/Desactivar usuario |
-
----
-
-## React Router - Loaders y Actions
-
-### usuariosLoader
-```typescript
-const usuariosLoader = async () => {
-  const res = await authFetch("/api/usuarios");
-  
-  if (!res.ok) {
-    throw new Error("Error al cargar usuarios");
-  }
-  
-  return res.json();
-};
-```
-
-### crearUsuarioAction
-```typescript
-const crearUsuarioAction = async ({ request }: ActionFunction) => {
-  if (request.method !== "POST") return null;
-  
-  const formData = await request.formData();
-  const payload = {
-    username: formData.get("username"),
-    legajo: formData.get("legajo"),
-    password: formData.get("password"),
-    rol: formData.get("rol"),
-  };
-  
-  const res = await authFetch("/api/usuarios", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-  
-  if (!res.ok) {
-    return { error: "Error al crear usuario" };
-  }
-  
-  return redirect("/usuarios");
-};
-```
-
-### editarUsuarioAction
-Seguir el mismo patrón que `crearUsuarioAction`, pero con PUT.
-
----
-
-## Validaciones Frontend
-
-**En el formulario:**
-- ✓ `username` requerido (no vacío)
-- ✓ `legajo` requerido (no vacío)
-- ✓ `password` requerido **solo al crear**
-- ✓ `rol` válido (select con: admin, cocinero, cajero, mozo)
-
-**No hacer:**
-- ✗ No guardar ni mostrar passwords
-- ✗ No loguear tokens
-- ✗ No permitir inputs libres para roles
-
----
-
-## Tabla en UsuariosPage
-
-Mostrar columnas:
-
-| Usuario | Legajo | Rol | Estado | Acciones |
-|---|---|---|---|---|
-
-**Estado visual:**
-- **Activo** → Badge verde
-- **Inactivo** → Badge rojo
-
-**Acciones:**
-- Editar (enlace a `/usuarios/:id`)
-- Activar/Desactivar (PATCH al endpoint correspondiente)
-
----
-
-## Protección de Acceso
-
-**Solo el rol `admin` puede acceder al ABM.**
-
-En el loader:
-```typescript
-const usuariosLoader = async () => {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  
-  if (user?.rol !== "admin") {
-    return redirect("/");
-  }
-  
-  // ... resto del loader
-};
-```
-
----
-
-## Seguridad
-
-**El frontend NUNCA debe:**
-- Guardar o mostrar passwords
-- Loguear tokens en consola
-- Realizar requests sin `authFetch`
-- Permitir ediciones sin validación
-
----
-
-## Coherencia con Proyecto
-
-**Seguir exactamente el patrón de:**
-- `PlatosPage.tsx` (listado)
-- `PlatoFormPage.tsx` (formulario)
-- `CocinaPage.tsx` (uso de socket y datos)
-
-**Reutilizar:**
-- Componentes `Button`, `Input`, `Label`
-- Estilos Tailwind (cards, rounded-xl)
-- Layout `AppLayout`
-
----
-
-## Restricciones Obligatorias
-
-| Restricción | Detalle |
+| Regla | Detalle |
 |---|---|
-| ✓ TypeScript estricto | No usar `any` |
-| ✓ JSDoc en funciones | Cada función con `@description` |
-| ✓ Imports absolutos | Usar `@/...` |
-| ✓ authFetch para requests | No `fetch` directo |
-| ✓ No nuevas dependencias | Todo con tools existentes |
+| **Mismos Hooks de Datos** | Debes seguir utilizando `useLoaderData()`, `useActionData()`, `useNavigation()` tal como están ahora. |
+| **Mismos Nombres en Inputs** | En el formulario, los `<input>` y `<select>` deben conservar estrictamente sus atributos `name` (ej. `name="nombre"`, `name="rolId"`), ya que el Action (`routes.tsx`) depende de esto para extraer el `formData`. |
+| **Usar `<Form>` de React Router** | El formulario debe seguir encapsulado en el componente `<Form method="post">` (o `"put"`) de `react-router-dom`. No cambies esto por un `<form>` estándar con `onSubmit`. |
+| **Permisos de UI** | Asegúrate de no eliminar los componentes `<RequirePermiso>` que envuelven los botones de "Nuevo Usuario", "Editar" y "Baja", ya que estos aseguran que la UI se adapte al rol del usuario activo. |
+| **Manejo de Baja Lógica** | El botón de eliminar llama a la función asíncrona `handleEliminar(id)`. Mantén esta función o adaptala si decides usar un modal personalizado en lugar de `window.confirm()`. |
 
 ---
 
-## Checklist de Implementación
+## Expectativas de Diseño
 
-- [ ] Crear `src/pages/Usuarios/UsuariosPage.tsx`
-- [ ] Crear `src/pages/Usuarios/UsuarioFormPage.tsx`
-- [ ] Agregar interfaz `Usuario` en `src/types/index.ts`
-- [ ] Agregar loaders y actions en `src/app/routes.tsx`
-- [ ] Agregar rutas en array `children` del router
-- [ ] Agregar link en `src/components/layout/Sidebar.tsx`
-- [ ] Probar listado, crear, editar, activar/desactivar
-- [ ] Validar protección de rol `admin`
-- [ ] Validar uso de `authFetch`
+El diseño actual es funcional pero muy básico. Se espera que apliques mejores prácticas de UI/UX:
+
+- **Listado (UsuariosPage)**: 
+  - Transforma la tabla genérica en un data grid moderno o en un layout de tarjetas si lo ves conveniente.
+  - Agrega tooltips, micro-animaciones (ej. en hover), mejor contraste en los badges de estados (Activo/Inactivo) y roles.
+  - Un layout limpio para los filtros de estado.
+- **Formulario (UsuarioFormPage)**: 
+  - Mejora el diseño del formulario utilizando un layout de cuadrícula avanzado o dividiendo la información visualmente (ej. "Información Personal" vs "Autenticación y Roles").
+  - Dale un estilo premium a los inputs, con focus states refinados y soporte para mostrar los mensajes de error del action (`actionData.error`) de forma atractiva.
 
 ---
 
 ## Notas Finales
 
-- **Priorizar:** Estabilidad > Coherencia > Legibilidad
-- **NO sobreingenierizar** — mantener simple y mantenible
-- **Explicabilidad:** El código debe ser claro para la defensa oral
+- Si necesitas agregar iconos, usa `lucide-react` o los iconos de Material de Google que ya se usan en el proyecto.
+- Tienes total libertad creativa sobre el HTML y las clases de Tailwind, siempre que los enlaces lógicos de los componentes de React Router no se alteren.

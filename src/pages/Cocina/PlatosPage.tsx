@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import type { Plato, Rubro } from "../../types";
 import { authFetch } from "@/lib/authFetch";
+import { RequirePermiso } from "@/auth/RequirePermiso";
+import { PLATO_CREAR } from "@/auth/permisos";
 
 /**
  * @description Renderiza el catalogo de platos con filtros por categoria y estado.
@@ -74,12 +76,14 @@ export const PlatosPage = () => {
         </div>
 
         <div className="w-52">
-          <Button
-            onClick={() => navigate("/cocina/platos/nuevo")}
-            variant="destructive"
-          >
-            Agregar Plato
-          </Button>
+          <RequirePermiso permisos={[PLATO_CREAR]}>
+            <Button
+              onClick={() => navigate("/cocina/platos/nuevo")}
+              variant="destructive"
+            >
+              Agregar Plato
+            </Button>
+          </RequirePermiso>
         </div>
       </div>
 

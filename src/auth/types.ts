@@ -14,7 +14,9 @@ export interface AuthUser {
   nombre: string;
   apellido: string;
   legajo: string;
+  rolId: number;
   rol: string;
+  permisos: string[];
   activo: boolean;
 }
 

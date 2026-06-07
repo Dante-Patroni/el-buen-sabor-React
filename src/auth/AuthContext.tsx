@@ -3,6 +3,7 @@ import {
   useContext,
   useMemo,
   useState,
+  useCallback,
   type ReactNode,
 } from "react";
 
@@ -21,6 +22,8 @@ interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
   logout: () => void;
+  tienePermiso: (codigo: string) => boolean;
+  tieneAlgunPermiso: (...codigos: string[]) => boolean;
 }
 
 /**
@@ -59,6 +62,16 @@ export function AuthProvider({
     setUser(null);
   };
 
+  const tienePermiso = useCallback(
+    (codigo: string) => user?.permisos?.includes(codigo) ?? false,
+    [user]
+  );
+
+  const tieneAlgunPermiso = useCallback(
+    (...codigos: string[]) => codigos.some((c) => user?.permisos?.includes(c) ?? false),
+    [user]
+  );
+
   /**
    * Memoriza el valor del contexto.
    */
@@ -67,8 +80,10 @@ export function AuthProvider({
       user,
       isAuthenticated,
       logout,
+      tienePermiso,
+      tieneAlgunPermiso,
     }),
-    [user, isAuthenticated],
+    [user, isAuthenticated, tienePermiso, tieneAlgunPermiso],
   );
 
   return (

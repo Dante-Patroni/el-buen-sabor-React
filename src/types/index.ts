@@ -49,3 +49,26 @@ export interface Plato {
   /** Fecha de creación del registro */
   createdAt?: string;
 }
+
+/**
+ * Representa un Rol en el sistema RBAC.
+ */
+export interface Rol {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+}
+
+/**
+ * Representa un Usuario del sistema.
+ */
+export interface Usuario {
+  id: number;
+  nombre: string;
+  apellido: string;
+  legajo: string;
+  rolId: number;
+  rol?: string;
+  permisos?: string[];
+  activo: boolean;
+}

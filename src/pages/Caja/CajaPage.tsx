@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { Button } from "../../components/ui/Button";
 import { authFetch } from "@/lib/authFetch";
+import { RequirePermiso } from "@/auth/RequirePermiso";
+import { TICKET_VER, MESA_COBRAR } from "@/auth/permisos";
 import { ReceiptText } from "lucide-react";
 
 type MesaResumen = {
@@ -491,23 +493,28 @@ export const CajaPage = () => {
                 </div>
 
                 <div className="flex flex-col gap-3 min-w-[140px] justify-end">
-                  <Button
-                    variant="secondary"
-                    className="w-full rounded-2xl py-3 cursor-pointer"
-                    disabled={isLoadingMesa || !selectedMesa || !mesaListaParaCobrar}
-                    onClick={loadTicket}
-                    title={!mesaListaParaCobrar ? "La mesa aún no solicitó cobro" : undefined}
-                  >
-                    Ver ticket
-                  </Button>
-                  <Button
-                    className="w-full rounded-2xl py-3 cursor-pointer"
-                    disabled={isProcessing || !selectedMesa || !mesaListaParaCobrar || isClosedByMozo}
-                    onClick={cobrarMesa}
-                    title={!mesaListaParaCobrar ? "La mesa aún no solicitó cobro" : undefined}
-                  >
-                    Cobrar mesa
-                  </Button>
+                  <RequirePermiso permisos={[TICKET_VER]}>
+                    <Button
+                      variant="secondary"
+                      className="w-full rounded-2xl py-3 cursor-pointer"
+                      disabled={isLoadingMesa || !selectedMesa || !mesaListaParaCobrar}
+                      onClick={loadTicket}
+                      title={!mesaListaParaCobrar ? "La mesa aún no solicitó cobro" : undefined}
+                    >
+                      Ver ticket
+                    </Button>
+                  </RequirePermiso>
+                  
+                  <RequirePermiso permisos={[MESA_COBRAR]}>
+                    <Button
+                      className="w-full rounded-2xl py-3 cursor-pointer"
+                      disabled={isProcessing || !selectedMesa || !mesaListaParaCobrar || isClosedByMozo}
+                      onClick={cobrarMesa}
+                      title={!mesaListaParaCobrar ? "La mesa aún no solicitó cobro" : undefined}
+                    >
+                      Cobrar mesa
+                    </Button>
+                  </RequirePermiso>
                 </div>
               </section>
             </div>

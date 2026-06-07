@@ -10,11 +10,15 @@ import { CocinaPage } from "../pages/Cocina/CocinaPage";
 import { PlatosPage } from "../pages/Cocina/PlatosPage";
 import { PlatoFormPage } from "../pages/Cocina/PlatoFormPage";
 
+import { UsuariosPage } from "../pages/Administracion/UsuariosPage";
+import { UsuarioFormPage } from "../pages/Administracion/UsuarioFormPage";
+
 import { LoginPage } from "../pages/Auth/LoginPage";
 
 import { ErrorPage } from "../pages/Errores/ErrorPage";
 import { ConfigPage } from "../pages/Configuracion/ConfigPage";
 import { CajaPage } from "../pages/Caja/CajaPage";
+import { AccesoDenegado } from "../pages/Errores/AccesoDenegado";
 
 import { extractRubroId } from "@/lib/utils";
 import { authFetch } from "@/lib/authFetch";
@@ -26,6 +30,20 @@ import {
   getUser,
 } from "@/auth/authService";
 
+import { RequirePermiso } from "@/auth/RequirePermiso";
+import {
+  PEDIDO_VER,
+  MESA_VER,
+  TICKET_VER,
+  MESA_COBRAR,
+  PLATO_CREAR,
+  PLATO_MODIFICAR,
+  PLATO_ELIMINAR,
+  USUARIO_VER,
+  USUARIO_CREAR,
+  USUARIO_MODIFICAR,
+} from "@/auth/permisos";
+
 /**
  * Determina la ruta de inicio (Dashboard) correspondiente a cada rol de usuario.
  * @param {string} rol - El rol del usuario obtenido del sistema de autenticación.
@@ -33,6 +51,9 @@ import {
  */
 const getHomeByRole = (rol: string): string => {
   switch (rol) {
+    case "superadmin":
+      return "/cocina/platos";
+
     case "admin":
       return "/cocina/platos";
 
@@ -430,6 +451,66 @@ const loginAction = async ({
   }
 };
 
+const usuariosLoader = async () => {
+  const res = await authFetch("/api/usuarios");
+  if (!res.ok) throw new Error("Error al cargar usuarios");
+  return res.json();
+};
+
+const ROLES_HARDCODED = [
+  { id: 1, nombre: "superadmin", descripcion: "Acceso total al sistema" },
+  { id: 2, nombre: "admin", descripcion: "Administrador del restaurante" },
+  { id: 3, nombre: "cajero", descripcion: "Operador de caja" },
+  { id: 4, nombre: "cocinero", descripcion: "Operador de cocina" },
+  { id: 5, nombre: "mozo", descripcion: "Atención de mesas y pedidos" },
+];
+
+const usuarioFormLoader = async ({ params }: LoaderFunctionArgs) => {
+  if (!params.id) return { roles: ROLES_HARDCODED };
+  const res = await authFetch(`/api/usuarios/${params.id}`);
+  if (!res.ok) throw new Error("Error al cargar usuario");
+  const usuario = await res.json();
+  return { usuario, roles: ROLES_HARDCODED };
+};
+
+const crearUsuarioAction = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const payload = Object.fromEntries(formData.entries()) as Record<string, any>;
+  payload.rolId = Number(payload.rolId);
+  
+  const res = await authFetch("/api/usuarios", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const errorMsg = await res.text();
+    return { error: errorMsg || "Error al crear usuario" };
+  }
+  return redirect("/administracion/usuarios");
+};
+
+const editarUsuarioAction = async ({ request, params }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const payload = Object.fromEntries(formData.entries()) as Record<string, any>;
+  payload.rolId = Number(payload.rolId);
+  payload.activo = payload.activo === "on";
+  if (!payload.password) delete payload.password;
+
+  const res = await authFetch(`/api/usuarios/${params.id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const errorMsg = await res.text();
+    return { error: errorMsg || "Error al actualizar usuario" };
+  }
+  return redirect("/administracion/usuarios");
+};
+
 export const router =
   createBrowserRouter([
     /**
@@ -457,26 +538,77 @@ export const router =
 
         {
           path: "/cocina",
-          element: <CocinaPage />,
+          element: (
+            <RequirePermiso permisos={[PEDIDO_VER]} fallback={<AccesoDenegado />}>
+              <CocinaPage />
+            </RequirePermiso>
+          ),
         },
 
         {
           path: "/cocina/platos",
-          element: <PlatosPage />,
+          element: (
+            <RequirePermiso permisos={[PLATO_CREAR, PLATO_MODIFICAR, PLATO_ELIMINAR]} fallback={<AccesoDenegado />}>
+              <PlatosPage />
+            </RequirePermiso>
+          ),
           loader: platosLoader,
           errorElement: <ErrorPage />,
         },
 
         {
+          path: "/administracion/usuarios",
+          element: (
+            <RequirePermiso permisos={[USUARIO_VER]} fallback={<AccesoDenegado />}>
+              <UsuariosPage />
+            </RequirePermiso>
+          ),
+          loader: usuariosLoader,
+          errorElement: <ErrorPage />,
+        },
+
+        {
+          path: "/administracion/usuarios/nuevo",
+          element: (
+            <RequirePermiso permisos={[USUARIO_CREAR]} fallback={<AccesoDenegado />}>
+              <UsuarioFormPage />
+            </RequirePermiso>
+          ),
+          loader: usuarioFormLoader,
+          action: crearUsuarioAction,
+          errorElement: <ErrorPage />,
+        },
+
+        {
+          path: "/administracion/usuarios/:id",
+          element: (
+            <RequirePermiso permisos={[USUARIO_MODIFICAR]} fallback={<AccesoDenegado />}>
+              <UsuarioFormPage />
+            </RequirePermiso>
+          ),
+          loader: usuarioFormLoader,
+          action: editarUsuarioAction,
+          errorElement: <ErrorPage />,
+        },
+
+        {
           path: "/cocina/platos/nuevo",
-          element: <PlatoFormPage />,
+          element: (
+            <RequirePermiso permisos={[PLATO_CREAR]} fallback={<AccesoDenegado />}>
+              <PlatoFormPage />
+            </RequirePermiso>
+          ),
           action: crearPlatoAction,
           errorElement: <ErrorPage />,
         },
 
         {
           path: "/caja",
-          element: <CajaPage />,
+          element: (
+            <RequirePermiso permisos={[MESA_VER, TICKET_VER, MESA_COBRAR]} fallback={<AccesoDenegado />}>
+              <CajaPage />
+            </RequirePermiso>
+          ),
           errorElement: <ErrorPage />,
         },
 
@@ -487,7 +619,11 @@ export const router =
 
         {
           path: "/cocina/platos/:id",
-          element: <PlatoFormPage />,
+          element: (
+            <RequirePermiso permisos={[PLATO_MODIFICAR]} fallback={<AccesoDenegado />}>
+              <PlatoFormPage />
+            </RequirePermiso>
+          ),
           loader: platoLoader,
           action: editarPlatoAction,
           errorElement: <ErrorPage />,
