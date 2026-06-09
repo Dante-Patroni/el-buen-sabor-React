@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { RequirePermiso } from "@/auth/RequirePermiso";
 import {
   PEDIDO_VER,
@@ -18,6 +18,12 @@ import { useAuth } from "@/auth/AuthContext";
  */
 export const Sidebar = () => {
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate("/login");
+    };
 
     return (
         <aside className="h-screen w-64 fixed left-0 top-0 bg-stone-100 dark:bg-stone-900 flex flex-col p-4 z-50">
@@ -85,7 +91,7 @@ export const Sidebar = () => {
                     </Link>
 
                     <button
-                        onClick={logout}
+                        onClick={handleLogout}
                         className="flex w-full items-center gap-3 rounded px-4 py-3 text-red-600 hover:bg-red-100 cursor-pointer"
                     >
                         <span className="material-symbols-outlined">

@@ -38,6 +38,9 @@ export function saveAuth(token: string, user: AuthUser): void {
   localStorage.setItem("token", token);
 
   localStorage.setItem("user", JSON.stringify(user));
+
+  // Notificar al resto de la app que la sesión cambió
+  window.dispatchEvent(new Event("authChange"));
 }
 
 /**
@@ -86,6 +89,7 @@ export function isAuthenticated(): boolean {
 export function logout(): void {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
+  window.dispatchEvent(new Event("authChange"));
 }
 
 /**

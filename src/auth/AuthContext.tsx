@@ -4,6 +4,7 @@ import {
   useMemo,
   useState,
   useCallback,
+  useEffect,
   type ReactNode,
 } from "react";
 
@@ -46,6 +47,19 @@ export function AuthProvider({
   const [user, setUser] = useState<AuthUser | null>(() => {
     return getStoredUser();
   });
+
+  console.log("USER AUTH:", user);
+  console.log("ROL:", user?.rol);
+  console.log("PERMISOS:", user?.permisos);
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setUser(getStoredUser());
+    };
+    
+    window.addEventListener("authChange", handleAuthChange);
+    return () => window.removeEventListener("authChange", handleAuthChange);
+  }, []);
 
   /**
    * Determina si existe sesión autenticada.
