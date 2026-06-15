@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Button } from "../../components/ui/Button";
 import { io } from "socket.io-client";
 import { authFetch } from "@/lib/authFetch";
+import { Heading } from "@/components/ui/Heading";
+import { Loading } from "@/components/ui/Loading";
 
 /**
  * @description Renderiza el monitor de cocina en tiempo real con filtros y columnas por estado.
@@ -275,9 +277,9 @@ export const CocinaPage = () => {
             <header className="border-b px-6 py-3 flex flex-col gap-2">
                 <div className="flex items-center justify-between h-10">
                     <div className="flex items-center gap-3">
-                        <h1 className="text-xl font-bold text-yellow-700">
+                        <Heading as="h1" className="text-xl">
                             MONITOR DE COCINA
-                        </h1>
+                        </Heading>
                         <button
                             onClick={() => fetchPedidos()}
                             disabled={isLoading}
@@ -337,10 +339,7 @@ export const CocinaPage = () => {
             {/* Tablero con columnas o indicador de carga */}
             {isLoading ? (
                 <main className="flex-1 p-6 flex items-center justify-center">
-                    <div className="flex items-center gap-3 text-gray-500">
-                        <span className="material-symbols-outlined animate-spin">sync</span>
-                        <span className="text-lg">Cargando pedidos...</span>
-                    </div>
+                    <Loading label="Cargando pedidos..." className="text-gray-500 text-lg" />
                 </main>
             ) : (
                 <main className="flex-1 p-6">

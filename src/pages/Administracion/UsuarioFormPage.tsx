@@ -3,6 +3,9 @@ import { useState } from "react";
 import { Button } from "../../components/ui/Button";
 import type { Usuario, Rol } from "../../types";
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Heading } from "@/components/ui/Heading";
+import { Alert } from "@/components/ui/Alert";
+import { FormField, FormSelect, LABEL_STYLES } from "@/components/ui/FormField";
 
 export const UsuarioFormPage = () => {
   const navigate = useNavigate();
@@ -19,9 +22,9 @@ export const UsuarioFormPage = () => {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_2fr]">
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold text-stone-900">
+            <Heading as="h1">
               {isEditing ? "Editar Usuario" : "Nuevo Usuario"}
-            </h1>
+            </Heading>
             <p className="mt-3 text-sm text-stone-600">
               Administre la identidad y los permisos del personal de{" "}
               <span className="font-semibold text-red-800">El Buen Sabor</span>. Asegúrese de
@@ -55,83 +58,53 @@ export const UsuarioFormPage = () => {
           method={isEditing ? "put" : "post"}
           className="space-y-6 rounded-3xl border border-stone-200 bg-white p-6 shadow-sm"
         >
-          {actionData?.error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              {actionData.error}
-            </div>
-          )}
+          {actionData?.error && <Alert>{actionData.error}</Alert>}
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="nombre" className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-                Nombre *
-              </label>
-              <input
-                id="nombre"
-                name="nombre"
-                type="text"
-                defaultValue={usuario?.nombre}
-                required
-                placeholder="Ej: Julian"
-                className="w-full rounded-xl border border-stone-300 bg-stone-50 p-3 focus:border-red-800 focus:outline-none"
-              />
-            </div>
+            <FormField
+              label="Nombre"
+              id="nombre"
+              name="nombre"
+              type="text"
+              defaultValue={usuario?.nombre}
+              required
+              placeholder="Ej: Julian"
+            />
 
-            <div className="space-y-2">
-              <label htmlFor="apellido" className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-                Apellido *
-              </label>
-              <input
-                id="apellido"
-                name="apellido"
-                type="text"
-                defaultValue={usuario?.apellido}
-                required
-                placeholder="Ej: Alvarez"
-                className="w-full rounded-xl border border-stone-300 bg-stone-50 p-3 focus:border-red-800 focus:outline-none"
-              />
-            </div>
+            <FormField
+              label="Apellido"
+              id="apellido"
+              name="apellido"
+              type="text"
+              defaultValue={usuario?.apellido}
+              required
+              placeholder="Ej: Alvarez"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="legajo" className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-                Legajo *
-              </label>
-              <input
-                id="legajo"
-                name="legajo"
-                type="text"
-                defaultValue={usuario?.legajo}
-                required
-                placeholder="ID-4029"
-                className="w-full rounded-xl border border-stone-300 bg-stone-50 p-3 focus:border-red-800 focus:outline-none"
-              />
-            </div>
+            <FormField
+              label="Legajo"
+              id="legajo"
+              name="legajo"
+              type="text"
+              defaultValue={usuario?.legajo}
+              required
+              placeholder="ID-4029"
+            />
 
-            <div className="space-y-2">
-              <label htmlFor="rolId" className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-                Rol *
-              </label>
-              <select
-                id="rolId"
-                name="rolId"
-                defaultValue={usuario?.rolId}
-                required
-                className="w-full rounded-xl border border-stone-300 bg-stone-50 p-3 focus:border-red-800 focus:outline-none"
-              >
-                <option value="">Seleccione un rol</option>
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.nombre} - {r.descripcion}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <FormSelect label="Rol" id="rolId" name="rolId" defaultValue={usuario?.rolId} required>
+              <option value="">Seleccione un rol</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.nombre} - {r.descripcion}
+                </option>
+              ))}
+            </FormSelect>
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+            <label htmlFor="password" className={LABEL_STYLES}>
               {isEditing ? "Nueva Contraseña (dejar en blanco para no cambiar)" : "Contraseña *"}
             </label>
             <div className="relative">

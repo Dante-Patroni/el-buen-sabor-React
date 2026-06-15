@@ -5,6 +5,10 @@ import { authFetch } from "@/lib/authFetch";
 import { RequirePermiso } from "@/auth/RequirePermiso";
 import { TICKET_VER, MESA_COBRAR } from "@/auth/permisos";
 import { ReceiptText } from "lucide-react";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Alert } from "@/components/ui/Alert";
+import { Loading } from "@/components/ui/Loading";
 
 type MesaResumen = {
   id: number;
@@ -286,15 +290,12 @@ export const CajaPage = () => {
   const totalActualCalculado = deliveredItems.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-stone-900">Caja</h1>
-          <p className="text-sm text-stone-600">
-            Seleccioná una mesa para consultar el ticket y cerrar el cobro.
-          </p>
-        </div>
-      </div>
+    <PageContainer className="p-8">
+      <PageHeader
+        className="mb-8"
+        title="Caja"
+        description="Seleccioná una mesa para consultar el ticket y cerrar el cobro."
+      />
 
       <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
@@ -310,7 +311,7 @@ export const CajaPage = () => {
           </div>
 
           {isLoadingMesas ? (
-            <div className="text-stone-500">Cargando mesas...</div>
+            <Loading label="Cargando mesas..." />
           ) : mesasEsperandoCobro.length === 0 ? (
             <div className="text-stone-500">Ninguna mesa ha solicitado cobro aún.</div>
           ) : (
@@ -347,17 +348,9 @@ export const CajaPage = () => {
         </aside>
 
         <main className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-          {error && (
-            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+          {error && <Alert className="mb-4">{error}</Alert>}
 
-          {message && (
-            <div className="mb-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-              {message}
-            </div>
-          )}
+          {message && <Alert variant="success" className="mb-4">{message}</Alert>}
 
           {selectedMesa ? (
             <div className="space-y-6">
@@ -382,7 +375,7 @@ export const CajaPage = () => {
                 <h3 className="mb-4 text-lg font-semibold text-stone-900">Pedidos</h3>
 
                 {isLoadingMesa ? (
-                  <p className="text-stone-500">Cargando detalle...</p>
+                  <Loading label="Cargando detalle..." />
                 ) : deliveredItems.length === 0 ? (
                   <p className="text-stone-500">La mesa no tiene pedidos entregados.</p>
                 ) : (
@@ -528,6 +521,6 @@ export const CajaPage = () => {
           )}
         </main>
       </div>
-    </div>
+    </PageContainer>
   );
 };

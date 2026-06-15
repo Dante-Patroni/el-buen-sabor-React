@@ -10,6 +10,8 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import type { Plato, Rubro } from "@/types";
 import { extractRubroId } from "@/lib/utils";
+import { Heading } from "@/components/ui/Heading";
+import { Alert } from "@/components/ui/Alert";
 
 /**
  * @description Renderiza el formulario para crear o editar platos usando actions/loaders de React Router.
@@ -141,9 +143,9 @@ export const PlatoFormPage = () => {
                     <div className="flex-[2] p-8 md:p-12">
                         <div className="mb-10 flex justify-between items-start">
                             <div>
-                                <h2 className="text-3xl font-extrabold text-gray-800">
+                                <Heading as="h2" className="text-3xl font-extrabold">
                                     {isEditMode ? "Editar Plato" : "Nuevo Plato"}
-                                </h2>
+                                </Heading>
                                 <p className="text-gray-500 mt-1">
                                     Crea o edita la información principal del plato
                                 </p>
@@ -179,9 +181,7 @@ export const PlatoFormPage = () => {
                         </div>
 
                         {actionData?.error && (
-                            <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4">
-                                {actionData.error}
-                            </div>
+                            <Alert className="mb-4">{actionData.error}</Alert>
                         )}
                         
                         <div className="space-y-8">

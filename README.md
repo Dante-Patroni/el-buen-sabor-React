@@ -48,6 +48,52 @@ El proyecto utiliza extensivamente las nuevas características de **React Router
 - **Actions:** Para procesar mutaciones (crear, actualizar, borrar) enviadas mediante componentes `<Form>` nativos de react-router.
 - Todo centralizado en `src/app/routes.tsx`.
 
+## Estructura del Proyecto
+
+```
+src/
+├── app/
+│   └── routes.tsx          # Configuración central del router (rutas, loaders, actions)
+├── auth/
+│   ├── AuthContext.tsx      # Contexto global de sesión (usuario, permisos, logout)
+│   ├── authService.ts       # Login/logout, persistencia de sesión en localStorage
+│   ├── permisos.ts          # Constantes de códigos de permiso (RBAC)
+│   ├── RequirePermiso.tsx    # Guard de permisos para rutas y elementos de UI
+│   └── types.ts             # Tipos de usuario/permiso
+├── components/
+│   ├── layout/               # Componentes de layout de página
+│   │   ├── AppLayout.tsx      # Layout raíz (Sidebar + <Outlet/>)
+│   │   ├── Sidebar.tsx         # Navegación lateral filtrada por permisos
+│   │   ├── PageHeader.tsx      # Encabezado de página (título + descripción + acción)
+│   │   └── PageContainer.tsx   # Contenedor con padding estándar de página
+│   └── ui/                    # Sistema de diseño / componentes reutilizables
+│       ├── Button.tsx, card.tsx, input.tsx, label.tsx, calendar.tsx  # Base shadcn
+│       ├── Heading.tsx         # Títulos h1/h2/h3 unificados
+│       ├── Text.tsx            # Texto secundario (subtítulos/descripciones)
+│       ├── Alert.tsx           # Mensajes de error/éxito
+│       ├── Badge.tsx           # Pill de estado/rol
+│       ├── Loading.tsx         # Indicador de carga
+│       ├── EmptyState.tsx      # Estado vacío de página completa
+│       ├── FormField.tsx       # Campo de formulario (label + input/select)
+│       ├── Select.tsx          # Select estilizado para filtros
+│       ├── Table.tsx           # Tabla (Table, TableHead, TableRow, TableEmptyRow)
+│       └── Pagination.tsx      # Controles de paginación
+├── lib/
+│   ├── authFetch.ts   # fetch con header Authorization automático
+│   └── utils.ts       # cn() (merge de clases Tailwind) y extractRubroId()
+├── modules/cocina/    # Componentes y tipos específicos del módulo Cocina
+├── pages/
+│   ├── Auth/LoginPage.tsx
+│   ├── Administracion/    # Gestión de usuarios (CRUD)
+│   ├── Cocina/             # Monitor de cocina y catálogo de platos
+│   ├── Caja/               # Gestión de mesas y cobros
+│   ├── Configuracion/      # Preferencias (modo oscuro, etc.)
+│   └── Errores/            # Páginas de error, acceso denegado y "próximamente"
+└── types/index.ts     # Tipos de dominio (Usuario, Plato, Rubro, Rol...)
+```
+
+El sistema de diseño en `components/ui/` centraliza los patrones visuales repetidos (títulos, alertas, badges, tablas, paginación, campos de formulario, estados de carga/vacíos), evitando duplicación de JSX y manteniendo una paleta de colores consistente en toda la app (ver `INFORME_ARQUITECTURA.md` para el detalle de cada componente).
+
 ## Configuración y Ejecución
 
 ### Requisitos Previos

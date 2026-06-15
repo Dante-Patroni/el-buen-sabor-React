@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { Heading } from "@/components/ui/Heading";
 
 /**
  * @description Renderiza la pagina de configuracion y permite alternar el modo oscuro persistido.
@@ -17,10 +19,10 @@ export const ConfigPage = () => {
     localStorage.setItem("darkMode", String(darkMode));
   }, [darkMode]);
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-yellow-700 mb-6">Configuración</h1>
+    <PageContainer>
+      <Heading as="h1" className="mb-6">Configuración</Heading>
       <div className="bg-white p-6 rounded-xl shadow max-w-md">
-        <h2 className="text-lg font-semibold mb-4">Apariencia</h2>
+        <Heading as="h3" className="mb-4">Apariencia</Heading>
         <div className="flex items-center justify-between">
           <span>Modo oscuro</span>
           <button
@@ -38,6 +40,6 @@ export const ConfigPage = () => {
           </button>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };

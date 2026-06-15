@@ -5,7 +5,13 @@ import type { Usuario } from "../../types";
 import { authFetch } from "@/lib/authFetch";
 import { RequirePermiso } from "@/auth/RequirePermiso";
 import { USUARIO_CREAR, USUARIO_MODIFICAR, USUARIO_ELIMINAR } from "@/auth/permisos";
-import { Search, UserPlus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, UserPlus } from "lucide-react";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Alert } from "@/components/ui/Alert";
+import { Badge } from "@/components/ui/Badge";
+import { Table, TableHead, TableRow, TableEmptyRow } from "@/components/ui/Table";
+import { Pagination } from "@/components/ui/Pagination";
 
 const PAGE_SIZE = 8;
 
@@ -88,31 +94,24 @@ export const UsuariosPage = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-stone-900">Gestión de Usuarios</h1>
-          <p className="text-sm text-stone-600">
-            Control y administración del personal del restaurante.
-          </p>
-        </div>
+    <PageContainer>
+      <PageHeader
+        title="Gestión de Usuarios"
+        description="Control y administración del personal del restaurante."
+        action={
+          <RequirePermiso permisos={[USUARIO_CREAR]}>
+            <Button
+              onClick={() => navigate("/administracion/usuarios/nuevo")}
+              className="rounded-2xl bg-red-800 px-5 py-3 text-white hover:bg-red-900"
+            >
+              <UserPlus className="size-4" />
+              Agregar Usuario
+            </Button>
+          </RequirePermiso>
+        }
+      />
 
-        <RequirePermiso permisos={[USUARIO_CREAR]}>
-          <Button
-            onClick={() => navigate("/administracion/usuarios/nuevo")}
-            className="rounded-2xl bg-red-800 px-5 py-3 text-white hover:bg-red-900"
-          >
-            <UserPlus className="size-4" />
-            Agregar Usuario
-          </Button>
-        </RequirePermiso>
-      </div>
-
-      {error && (
-        <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <Alert className="mb-4">{error}</Alert>}
 
       <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="h-fit rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
@@ -200,133 +199,78 @@ export const UsuariosPage = () => {
         </aside>
 
         <main className="rounded-3xl border border-stone-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-stone-200 text-xs font-semibold uppercase tracking-wider text-stone-500">
-                  <th className="px-5 py-4">Nombre y Apellido</th>
-                  <th className="px-5 py-4">Legajo</th>
-                  <th className="px-5 py-4">Rol</th>
-                  <th className="px-5 py-4">Estado</th>
-                  <th className="px-5 py-4 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {usuariosPagina.map((usuario) => (
-                  <tr
-                    key={usuario.id}
-                    className="border-b border-stone-100 transition hover:bg-stone-50 last:border-b-0"
-                  >
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-stone-100 text-sm font-semibold text-stone-600">
-                          {getInitials(usuario.nombre, usuario.apellido)}
-                        </div>
-                        <span className="font-medium text-stone-900">
-                          {usuario.nombre} {usuario.apellido}
-                        </span>
+          <Table>
+            <TableHead>
+              <th className="px-5 py-4">Nombre y Apellido</th>
+              <th className="px-5 py-4">Legajo</th>
+              <th className="px-5 py-4">Rol</th>
+              <th className="px-5 py-4">Estado</th>
+              <th className="px-5 py-4 text-right">Acciones</th>
+            </TableHead>
+            <tbody>
+              {usuariosPagina.map((usuario) => (
+                <TableRow key={usuario.id}>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-stone-100 text-sm font-semibold text-stone-600">
+                        {getInitials(usuario.nombre, usuario.apellido)}
                       </div>
-                    </td>
-                    <td className="px-5 py-4 text-stone-600">#{usuario.legajo}</td>
-                    <td className="px-5 py-4">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${
-                          ROL_BADGE_STYLES[usuario.rol ?? ""] ?? "bg-stone-100 text-stone-700"
-                        }`}
-                      >
-                        {usuario.rol}
+                      <span className="font-medium text-stone-900">
+                        {usuario.nombre} {usuario.apellido}
                       </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${
-                          usuario.activo
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {usuario.activo ? "Activo" : "Inactivo"}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <RequirePermiso permisos={[USUARIO_MODIFICAR]}>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => navigate(`/administracion/usuarios/${usuario.id}`)}
-                          >
-                            Editar
-                          </Button>
-                        </RequirePermiso>
-                        <RequirePermiso permisos={[USUARIO_ELIMINAR]}>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEliminar(usuario.id)}
-                            disabled={!usuario.activo}
-                          >
-                            Baja
-                          </Button>
-                        </RequirePermiso>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {usuariosPagina.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="py-10 text-center text-stone-500">
-                      No se encontraron usuarios.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-stone-600">#{usuario.legajo}</td>
+                  <td className="px-5 py-4">
+                    <Badge className={ROL_BADGE_STYLES[usuario.rol ?? ""] ?? "bg-stone-100 text-stone-700"}>
+                      {usuario.rol}
+                    </Badge>
+                  </td>
+                  <td className="px-5 py-4">
+                    <Badge className={usuario.activo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                      {usuario.activo ? "Activo" : "Inactivo"}
+                    </Badge>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <RequirePermiso permisos={[USUARIO_MODIFICAR]}>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => navigate(`/administracion/usuarios/${usuario.id}`)}
+                        >
+                          Editar
+                        </Button>
+                      </RequirePermiso>
+                      <RequirePermiso permisos={[USUARIO_ELIMINAR]}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEliminar(usuario.id)}
+                          disabled={!usuario.activo}
+                        >
+                          Baja
+                        </Button>
+                      </RequirePermiso>
+                    </div>
+                  </td>
+                </TableRow>
+              ))}
+              {usuariosPagina.length === 0 && (
+                <TableEmptyRow colSpan={5} message="No se encontraron usuarios." />
+              )}
+            </tbody>
+          </Table>
 
           <div className="flex flex-col gap-3 border-t border-stone-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">
               Mostrando {usuariosPagina.length} de {usuariosFiltrados.length} usuarios
             </p>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPagina((p) => Math.max(1, p - 1))}
-                disabled={paginaActual === 1}
-                className="flex size-8 items-center justify-center rounded-xl border border-stone-200 text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <ChevronLeft className="size-4" />
-              </button>
-
-              {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setPagina(n)}
-                  className={
-                    "flex size-8 items-center justify-center rounded-xl text-sm font-semibold transition " +
-                    (n === paginaActual
-                      ? "bg-red-800 text-white"
-                      : "border border-stone-200 text-stone-600 hover:bg-stone-50")
-                  }
-                >
-                  {n}
-                </button>
-              ))}
-
-              <button
-                type="button"
-                onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
-                disabled={paginaActual === totalPaginas}
-                className="flex size-8 items-center justify-center rounded-xl border border-stone-200 text-stone-600 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <ChevronRight className="size-4" />
-              </button>
-            </div>
+            <Pagination page={paginaActual} totalPages={totalPaginas} onPageChange={setPagina} />
           </div>
         </main>
       </div>
-    </div>
+    </PageContainer>
   );
 };

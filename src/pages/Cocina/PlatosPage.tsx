@@ -6,6 +6,10 @@ import type { Plato, Rubro } from "../../types";
 import { authFetch } from "@/lib/authFetch";
 import { RequirePermiso } from "@/auth/RequirePermiso";
 import { PLATO_CREAR } from "@/auth/permisos";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Select } from "@/components/ui/Select";
+import { Table, TableHead, TableRow } from "@/components/ui/Table";
 
 /**
  * @description Renderiza el catalogo de platos con filtros por categoria y estado.
@@ -62,35 +66,28 @@ export const PlatosPage = () => {
   const disponibles = platosFiltrados.filter(p => p.esActivo).length;
 
   return (
-    <div className="p-6">
-
-      {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-3xl font-bold text-yellow-700">
-            Catálogo de Platos
-          </h2>
-          <p className="text-gray-500">
-            Administra tu menú, precios y disponibilidad en tiempo real.
-          </p>
-        </div>
-
-        <div className="w-52">
-          <RequirePermiso permisos={[PLATO_CREAR]}>
-            <Button
-              onClick={() => navigate("/cocina/platos/nuevo")}
-              variant="destructive"
-            >
-              Agregar Plato
-            </Button>
-          </RequirePermiso>
-        </div>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Catálogo de Platos"
+        description="Administra tu menú, precios y disponibilidad en tiempo real."
+        action={
+          <div className="w-52">
+            <RequirePermiso permisos={[PLATO_CREAR]}>
+              <Button
+                onClick={() => navigate("/cocina/platos/nuevo")}
+                variant="destructive"
+              >
+                Agregar Plato
+              </Button>
+            </RequirePermiso>
+          </div>
+        }
+      />
 
       {/* FILTROS Y MÉTRICAS */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="col-span-2 bg-white p-4 rounded-xl shadow flex gap-4">
-          <select
+          <Select
             value={categoriaFiltro}
             onChange={(e) =>
               setCategoriaFiltro(e.target.value ? Number(e.target.value) : "")
@@ -102,16 +99,16 @@ export const PlatosPage = () => {
                 {r.label}
               </option>
             ))}
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={estadoFiltro}
             onChange={(e) => setEstadoFiltro(e.target.value)}
           >
             <option value="">Cualquier estado</option>
             <option value="activo">Disponible</option>
             <option value="inactivo">No Disponible</option>
-          </select>
+          </Select>
 
         </div>
 
@@ -128,21 +125,19 @@ export const PlatosPage = () => {
 
       {/* TABLA DE PLATOS */}
       <div className="bg-white p-4 rounded-xl">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-gray-300">
-              <th className="py-2">Nombre</th>
-              <th className="py-2">Categoría</th>
-              <th className="py-2">Precio</th>
-              <th className="py-2">Es Menu del dia</th>
-              <th className="py-2">StockActual</th>
-              <th className="py-2">Es Disponible</th>
-            </tr>
-          </thead>
+        <Table>
+          <TableHead className="border-gray-300">
+            <th className="py-2">Nombre</th>
+            <th className="py-2">Categoría</th>
+            <th className="py-2">Precio</th>
+            <th className="py-2">Es Menu del dia</th>
+            <th className="py-2">StockActual</th>
+            <th className="py-2">Es Disponible</th>
+          </TableHead>
 
           <tbody>
             {platosFiltrados.map((plato) => (
-              <tr
+              <TableRow
                 key={plato.id}
                 onClick={() =>
                   navigate(`/cocina/platos/${plato.id}`, {
@@ -152,7 +147,6 @@ export const PlatosPage = () => {
                     },
                   })
                 }
-                className="border-b border-gray-200 hover:bg-gray-50 transition"
               >
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-4">
@@ -203,12 +197,12 @@ export const PlatosPage = () => {
                     </span>
                   </div>
                 </td>
-              </tr>
+              </TableRow>
             ))}
           </tbody>
-        </table>
+        </Table>
       </div>
 
-    </div>
+    </PageContainer>
   );
 }
