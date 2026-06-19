@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { Rubro } from "@/types"
 
 /**
  * @description Combina clases CSS condicionales y resuelve conflictos de Tailwind CSS.
@@ -15,6 +16,17 @@ export function cn(...inputs: ClassValue[]) {
  * @param {unknown} item - Objeto que puede contener rubroId, RubroId, rubro_id, rubro.id o Rubro.id.
  * @returns {number|null} ID numerico del rubro o null si no se encuentra.
  */
+export function flattenRubros(rubros: Rubro[]): { id: number; label: string }[] {
+  return rubros.flatMap((padre) => {
+    const opciones = [{ id: padre.id, label: padre.denominacion }];
+    const subrubros = (padre.subrubros || []).map((hijo) => ({
+      id: hijo.id,
+      label: `${padre.denominacion} / ${hijo.denominacion}`,
+    }));
+    return [...opciones, ...subrubros];
+  });
+}
+
 export function extractRubroId(item: unknown): number | null {
   if (!item || typeof item !== 'object') return null;
   

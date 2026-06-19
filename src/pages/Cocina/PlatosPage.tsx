@@ -6,6 +6,7 @@ import type { Plato, Rubro } from "../../types";
 import { authFetch } from "@/lib/authFetch";
 import { RequirePermiso } from "@/auth/RequirePermiso";
 import { PLATO_CREAR } from "@/auth/permisos";
+import { flattenRubros } from "@/lib/utils";
 
 /**
  * @description Renderiza el catalogo de platos con filtros por categoria y estado.
@@ -36,15 +37,7 @@ export const PlatosPage = () => {
       });
   }, []);
 
-  // Genera opciones de filtro incluyendo subrubros
-  const opcionesRubros = rubros.flatMap((padre) => {
-    const opciones = [{ id: padre.id, label: padre.denominacion }];
-    const subrubros = (padre.subrubros || []).map((hijo) => ({
-      id: hijo.id,
-      label: `${padre.denominacion} / ${hijo.denominacion}`,
-    }));
-    return [...opciones, ...subrubros];
-  });
+  const opcionesRubros = flattenRubros(rubros);
 
   // Filtra platos por categoría y estado
   const platosFiltrados = platos.filter((p) => {

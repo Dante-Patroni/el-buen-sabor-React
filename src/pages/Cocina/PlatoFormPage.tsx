@@ -9,7 +9,7 @@ import {
 } from "react-router-dom";
 import { Calendar } from "@/components/ui/calendar";
 import type { Plato, Rubro } from "@/types";
-import { extractRubroId } from "@/lib/utils";
+import { extractRubroId, flattenRubros } from "@/lib/utils";
 
 /**
  * @description Renderiza el formulario para crear o editar platos usando actions/loaders de React Router.
@@ -71,14 +71,7 @@ export const PlatoFormPage = () => {
             .catch((err) => console.error(err));
     }, []);
 
-    const opcionesRubros = rubros.flatMap((padre) => {
-        const opciones = [{ id: padre.id, label: padre.denominacion }];
-        const subrubros = (padre.subrubros || []).map((hijo) => ({
-            id: hijo.id,
-            label: `${padre.denominacion} / ${hijo.denominacion}`,
-        }));
-        return [...opciones, ...subrubros];
-    });
+    const opcionesRubros = flattenRubros(rubros);
 
     /**
      * @description Busca el ID de un subrubro a partir de su denominacion.

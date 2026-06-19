@@ -1,7 +1,7 @@
-# AGENT.md — El Buen Sabor (Frontend)
+# AGENT.md — Proyecto React (Plantilla)
 
 > **Rol:** Ingeniero de Software / Especialista en React  
-> **Fecha:** Mayo 2026  
+> **Fecha:** Junio 2026  
 > **Versión del Proyecto:** 0.1.0
 
 ## Stack Tecnológico
@@ -13,7 +13,6 @@
 | **Vite** | 8.0.x | Bundler y Dev Server |
 | **React Router** | 7.14.x | Enrutamiento (Data Mode) |
 | **Tailwind CSS** | 4.2.x | Estilos utility-first |
-| **Socket.io-client** | 4.8.x | Comunicación en tiempo real |
 | **@base-ui/react** | 1.4.x | Componentes base accesibles |
 
 ---
@@ -22,28 +21,38 @@
 
 ```
 src/
-├── app/              # Configuración de rutas (Data Mode)
-│   └── routes.tsx
-├── assets/           # Recursos estáticos (imágenes, logos)
-├── components/       # Componentes reutilizables
-│   ├── common/       # Componentes compartidos entre módulos (ej. Login, ABM)
-│   ├── layout/       # Estructuras de página (Sidebar, AppLayout)
-│   └── ui/           # Componentes atómicos (Button, Input, Calendar)
-├── lib/              # Utilidades puras y helpers
-│   └── utils.ts      # Funciones como `cn` y `extractRubroId`
-├── modules/          # Módulos de negocio específicos
-│   └── cocina/
-│       ├── components/ # Componentes propios del módulo (Column, PedidoCard)
-│       └── types.ts    # Tipos específicos del módulo (Pedido, ItemPedido)
-├── pages/            # Páginas que se renderizan por ruta
-│   ├── Administracion/
-│   ├── Cocina/
-│   ├── Configuracion/
-│   └── Errores/
-├── types/            # Tipos globales del dominio
-│   └── index.ts      # Interfaces como Plato, Rubro
-├── index.css         # Estilos globales y configuración de Tailwind
-└── main.tsx          # Entry point (monta RouterProvider)
+├── app/
+│   └── routes.tsx              # Configuración de rutas (Data Mode), loaders y actions
+├── assets/                     # Recursos estáticos (imágenes, logos)
+├── auth/                       # Sistema de autenticación y permisos
+│   ├── AuthContext.tsx          # Provider global + hook useAuth
+│   ├── authService.ts           # login(), logout(), getToken(), getUser()
+│   ├── permisos.ts              # Constantes de permisos (PLATO_CREAR, USUARIO_VER…)
+│   ├── RequirePermiso.tsx       # Componente guard basado en permisos
+│   └── types.ts                 # LoginCredentials, AuthUser, AuthState
+├── components/
+│   ├── <Modulo>/               # Componentes específicos de una sección (ej. Administracion/)
+│   ├── layout/                  # Estructuras de página (Sidebar, AppLayout)
+│   └── ui/                      # Componentes atómicos (Button, Input, Select, Card, Label)
+├── lib/
+│   ├── api/                     # Capa de acceso a la API, agrupada por entidad
+│   │   ├── <entidad>.api.ts     # ej. usuarios.api.ts, platos.api.ts
+│   ├── authFetch.ts             # Wrapper de fetch que agrega el JWT automáticamente
+│   ├── mappings.ts              # Mappings globales (estilos de badge, listas hardcodeadas)
+│   └── utils.ts                 # Helpers puros (cn, flattenRubros, extractRubroId…)
+├── modules/                     # Módulos de negocio con lógica y UI propias
+│   └── <modulo>/
+│       ├── components/          # Componentes exclusivos del módulo
+│       └── types.ts             # Re-exporta desde @/types si aplica
+├── pages/                       # Páginas que se renderizan por ruta
+│   ├── Auth/
+│   ├── Errores/
+│   └── <Modulo>/
+├── types/                       # Tipos globales del dominio, divididos por entidad
+│   ├── index.ts                 # Barrel: re-exporta todos los tipos
+│   ├── <entidad>.types.ts       # ej. usuario.types.ts, plato.types.ts, pedido.types.ts
+├── index.css                    # Estilos globales y configuración de Tailwind
+└── main.tsx                     # Entry point (monta RouterProvider + AuthProvider)
 ```
 
 ---
@@ -51,187 +60,151 @@ src/
 ## Convenciones de Código
 
 ### Nomenclatura
-- **Archivos y Carpetas:** `camelCase` o `PascalCase` para componentes React (`CocinaPage.tsx`, `AppLayout.tsx`). Minúsculas para utilidades y tipos (`utils.ts`, `types.ts`).
-- **Componentes:** PascalCase (`PedidoCard`, `PlatoFormPage`).
-- **Hooks y Funciones:** camelCase (`extractRubroId`, `usePedidos`).
+- **Archivos y Carpetas:** `PascalCase` para componentes React (`CocinaPage.tsx`). Minúsculas con punto para módulos (`utils.ts`, `usuarios.api.ts`, `usuario.types.ts`).
+- **Componentes:** PascalCase (`UsuariosTable`, `PlatoFormPage`).
+- **Hooks y Funciones:** camelCase (`flattenRubros`, `getRolBadgeClass`).
 - **Tipos e Interfaces:** PascalCase (`Plato`, `Rubro`, `ItemPedido`).
-- **Variables de Estado:** camelCase, descriptivas (`esIlimitado`, `rubroId`).
+- **Constantes de mapeo:** SCREAMING_SNAKE_CASE (`ROL_BADGE_STYLES`, `ROLES_HARDCODED`).
 
 ### Importación de Tipos
-- Usa `import type` cuando solo necesites la definición de un tipo.
-- Centraliza los tipos de dominio en `src/types/index.ts`.
-- Los tipos específicos de un módulo van en `src/modules/<modulo>/types.ts`.
+- Usar `import type` cuando solo se necesite la definición.
+- Los tipos de dominio van en `src/types/<entidad>.types.ts` y se importan desde el barrel `@/types`.
+- No duplicar tipos entre archivos.
+
+### Componentes UI
+- Usar siempre los componentes del sistema (`Button`, `Input`, `Select`) en lugar de tags HTML crudos con clases Tailwind inline.
+- Si un elemento se repite con estilos custom, crear un wrapper en `src/components/ui/`.
+
+### Capa de API
+- Las funciones que hacen fetch van en `src/lib/api/<entidad>.api.ts`.
+- Desde ahí invocan `authFetch`. Los loaders/actions de routes solo llaman a estas funciones.
+- No hardcodear endpoints en los componentes.
+
+### Mappings y Constantes
+- Objetos de mapeo (estilos, listas fijas) → `src/lib/mappings.ts`.
+- Helpers de transformación reutilizables → `src/lib/utils.ts`.
+- No definir estos inline dentro de los componentes.
 
 ### Estructura de Componentes
-1. Imports (React → Router → Componentes UI → Tipos → Utils)
-2. Definición del componente (function declaration)
-3. Hooks en orden: Datos (useLoaderData) → Navegación (useNavigate) → Estado local (useState) → Efectos (useEffect) → Computados
-4. Manejadores de eventos (handlers)
-5. JSX (retorno)
+1. Imports (React → Router → Componentes UI → Tipos → Utils → Lib)
+2. Constantes locales (arrays, objetos que no van a mappings por ser específicos)
+3. Hooks en orden: Datos (useLoaderData) → Navegación → Estado local → Efectos → Computados
+4. Handlers
+5. JSX (return)
 
 ---
 
 ## React Router Data Mode
 
-Este proyecto usa **React Router v7 en Data Mode** (no declarativo). Esto significa que la lógica de datos vive en el router, no en los componentes.
+Este proyecto usa **React Router v7 en Data Mode**. La lógica de datos vive en el router, no en los componentes.
 
 ### Loaders (Lectura)
-Se ejecutan **antes** de renderizar el componente. Reemplazan `useEffect` + `fetch` para carga inicial.
+Se ejecutan **antes** de renderizar el componente. Reemplazan `useEffect + fetch` para la carga inicial.
 ```tsx
-const res = await fetch(`${API_URL}/api/platos`);
-if (!res.ok) throw new Error("Error al cargar");
-return res.json();
+const platosLoader = async () => getPlatos(); // función de lib/api/
 ```
 
 ### Actions (Escritura)
-Manejan los submits de formularios (`<Form>` de `react-router-dom`).
+Manejan los submits de formularios con `<Form>` de react-router-dom.
 ```tsx
-Args) => {
+const crearAction = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const payload = { nombre: formData.get("nombre"), ... };
-  
-  const res = await fetch(`${API_URL}/api/platos`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  const res = await crearEntidad(payload); // función de lib/api/
   if (!res.ok) return { error: "Error al crear" };
-  return redirect("/cocina/platos");
+  return redirect("/ruta");
 };
 ```
 
-### Formularios con Data Mode
-- Usa `<Form>` de `react-router-dom` en lugar de `<form>` nativo.
-- Usa `encType="multipart/form-data"` si hay archivos.
-- Los inputs deben tener el atributo `name` para que `formData.get()` los capture.
-- Usa `useNavigation()` para saber si hay un submit en curso (`navigation.state === "submitting"`).
-- Usa `useActionData()` para leer respuestas de la action (ej. errores).
+### Formularios
+- Usar `<Form>` de `react-router-dom`, no `<form>` nativo.
+- Los inputs deben tener atributo `name` para que `formData.get()` los capture.
+- Usar `useNavigation()` para estado de submit (`navigation.state === "submitting"`).
+- Usar `useActionData()` para leer errores del action.
 
 ---
 
 ## Variables de Entorno
 
-Crea un archivo `.env` en la raíz del proyecto:
+Crear `.env` en la raíz:
 ```env
 VITE_API_URL=http://localhost:3000
 ```
-> **Importante:** Las variables deben empezar con `VITE_` para ser accesibles en el cliente.
 
 Uso en código:
 ```ts
 const API_URL = import.meta.env.VITE_API_URL;
 ```
 
+> Las variables deben empezar con `VITE_` para ser accesibles en el cliente.
+
 ---
 
-## Flujo ABM
+## Flujo ABM (Alta, Baja, Modificación)
 
-1. **Crear el tipo** en `src/types/index.ts`:
-   ```ts
-   export interface Usuario {
-     id: number;
-     nombre: string;
-     email: string;
-     // ...
-   }
-   ```
-
-2. **Crear la página** en `src/pages/<Modulo>/<Modulo>Page.tsx`.
-3. **Crear el formulario** en `src/pages/<Modulo>/<Modulo>FormPage.tsx`.
-4. **Definir Loader y Action** en `src/app/routes.tsx`.
-5. **Agregar la ruta** al array `children` del router.
-6. **Agregar el link** en `src/components/layout/Sidebar.tsx`.
+1. **Crear el tipo** en `src/types/<entidad>.types.ts` y re-exportar desde `index.ts`.
+2. **Crear funciones de API** en `src/lib/api/<entidad>.api.ts`.
+3. **Crear la página listado** en `src/pages/<Modulo>/<Modulo>Page.tsx`.
+4. **Crear el formulario** en `src/pages/<Modulo>/<Modulo>FormPage.tsx`.
+5. **Extraer la tabla** a `src/components/<Modulo>/<Modulo>Table.tsx` si tiene más de ~50 líneas.
+6. **Definir Loader y Action** en `src/app/routes.tsx`, usando las funciones de `lib/api/`.
+7. **Agregar la ruta** al array `children` del router.
+8. **Agregar el link** en `src/components/layout/Sidebar.tsx`.
 
 ---
 
 ## Autenticación
 
-### Estrategia de autenticación
+### Estrategia
+- JWT guardado en `localStorage` (token + usuario).
+- Rutas privadas protegidas por `authLoader` en React Router.
+- Estado global de auth via `AuthContext` + `useAuth` hook.
+- Permisos granulares con `RequirePermiso` y constantes en `permisos.ts`.
 
-El frontend utiliza autenticación basada en JWT con localStorage.
-
-- El backend devuelve un token JWT al hacer login.
-- El token y usuario se persisten en `localStorage`.
-- Las rutas privadas se protegen mediante loaders de React Router v7.
-- El logout elimina token y usuario del almacenamiento local.
-- Se usa **Context API** para estado global de auth (`AuthContext` + `useAuth` hook).
-- Se usa **`fetch` nativo** para llamadas HTTP (consistente con el resto del proyecto).
-- Login se implementa con **Action de React Router Data Mode** (consistente con `PlatoFormPage`).
-
-### Endpoint de login
-
+### authFetch
+```ts
+// lib/authFetch.ts — agrega automáticamente el Bearer token
+export const authFetch = async (endpoint: string, options: RequestInit = {}) => { ... };
 ```
-POST /api/usuarios/login
-```
-
-Body:
-```json
-{
-  "legajo": "1001",
-  "password": "1234"
-}
-```
-
-Response:
-```json
-{
-  "token": "...",
-  "usuario": {
-    "id": 1,
-    "username": "Admin",
-    "rol": "admin"
-  }
-}
-```
-
-### Flujo
-
-1. El usuario envía el formulario `LoginPage`.
-2. `loginAction` procesa el submit.
-3. Se hace fetch al backend.
-4. El backend devuelve JWT + usuario.
-5. Se guarda `token` y `user` en localStorage.
-6. Se redirige según el rol.
+Todas las funciones de `lib/api/` lo invocan. No usar fetch directamente en loaders ni componentes.
 
 ### Protección de rutas
-
-`authLoader` verifica existencia del token:
-- si no existe → `redirect("/login")`
-- si existe → permite navegación
-
-### Logout
-
-- elimina `token` de localStorage
-- elimina `user` de localStorage
-- redirige a `/login`
-
-### Estructura de Carpetas — Archivos a crear/modificar
-
-```
-src/
-├── auth/                              # ← CREAR (carpeta nueva)
-│   ├── AuthContext.tsx                 # Provider + useAuth hook
-│   ├── authService.ts                  # login(), logout(), getToken(), isAuthenticated()
-│   └── types.ts                        # LoginCredentials, AuthUser, AuthState
-├── pages/
-│   └── Auth/                           # ← CREAR (carpeta nueva)
-│       └── LoginPage.tsx               # Reemplaza Proximamente en /login
-├── app/
-│   └── routes.tsx                      # ← MODIFICAR (loginLoader, authLoader, loginAction)
-├── components/
-│   ├── layout/
-│   │   ├── AppLayout.tsx               # ← MODIFICAR (protección opcional)
-│   │   └── Sidebar.tsx                 # ← MODIFICAR (logout real con useAuth)
-│   └── ui/                             # Ya existen: Button, Input, Label
-└── main.tsx                            # ← MODIFICAR (wrap con AuthProvider)
+```tsx
+// authLoader verifica el token
+const authLoader = async () => {
+  if (!getToken()) return redirect("/login");
+  return null;
+};
 ```
 
-### Estados de UI a cubrir en LoginPage
+### Permisos de UI
+```tsx
+<RequirePermiso permisos={[USUARIO_CREAR]}>
+  <Button>Nuevo</Button>
+</RequirePermiso>
+```
 
-1. **Carga** → botón deshabilitado con texto "Ingresando..."
-2. **Error de credenciales** → mostrar mensaje en caja roja
-3. **Error de red** → "Error de conexión con el servidor"
-4. **Ya autenticado** → `loginLoader` redirige a `/cocina`
+---
+
+## ErrorPage
+
+```tsx
+export const ErrorPage = () => {
+  const error = useRouteError();
+  const isRouteError = isRouteErrorResponse(error);
+  const titulo = isRouteError ? `Error ${error.status}` : "Error inesperado";
+  const mensaje = isRouteError
+    ? error.statusText
+    : error instanceof Error ? error.message : "Algo salió mal";
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-red-600">{titulo}</h1>
+      {mensaje && <p className="text-gray-600 mt-2">{mensaje}</p>}
+      {isRouteError && error.data && <pre className="mt-4 bg-gray-100 p-4 rounded">{error.data}</pre>}
+    </div>
+  );
+};
+```
 
 ---
 
@@ -239,63 +212,10 @@ src/
 
 | Regla | Detalle |
 |---|---|
-| No eliminar imports existentes | Solo agregar los nuevos |
-| No cambiar loaders/actions existentes | Solo agregar `authLoader` a rutas |
+| No hardcodear endpoints | Van en `lib/api/<entidad>.api.ts` |
+| No duplicar tipos | Un type, un archivo, re-exportado desde barrel |
+| No definir mappings inline | Van en `lib/mappings.ts` |
+| Usar componentes UI | No usar `<button>`, `<input>`, `<select>` crudos con Tailwind |
+| Componentizar tablas grandes | Extraer a `components/<Modulo>/` si supera ~50 líneas |
+| Mantener JSDoc | Cada función exportada debe tener su `@description` |
 | Login fuera del AppLayout | Para que no herede la sidebar |
-| Usar `localStorage` | Consistente con el uso actual en `CocinaPage.tsx` |
-| No agregar dependencias npm | Todo se hace con `fetch` nativo |
-| Mantener JSDoc | Cada función debe tener su `@description` |
-
----
-
-# PARTE 2: Especificación — Rediseño UI/UX de Usuarios (CRUD)
-
-## Objetivo para el Agente del Compañero
-
-**¡IMPORTANTE!** Toda la lógica subyacente del ABM de Usuarios y el sistema de permisos (RBAC) **YA ESTÁ IMPLEMENTADA**. Esto incluye los Loaders, Actions, el enrutamiento (`routes.tsx`), la protección de acceso (`RequirePermiso.tsx`), las llamadas a la API y el menú lateral (`Sidebar.tsx`).
-
-Tu único trabajo como agente de interfaz es **REDISEÑAR** visualmente las páginas de Usuarios para darles un aspecto premium, dinámico y especial, según la visión del desarrollador a cargo.
-
----
-
-## Archivos a Modificar
-
-Solo debes trabajar sobre la capa de presentación (JSX y clases de Tailwind) de los siguientes archivos:
-
-1. **`src/pages/Administracion/UsuariosPage.tsx`** (Listado)
-2. **`src/pages/Administracion/UsuarioFormPage.tsx`** (Creación y Edición)
-
----
-
-## Reglas Críticas para el Rediseño
-
-Para no romper el funcionamiento actual, **DEBES RESPETAR** las siguientes reglas:
-
-| Regla | Detalle |
-|---|---|
-| **Mismos Hooks de Datos** | Debes seguir utilizando `useLoaderData()`, `useActionData()`, `useNavigation()` tal como están ahora. |
-| **Mismos Nombres en Inputs** | En el formulario, los `<input>` y `<select>` deben conservar estrictamente sus atributos `name` (ej. `name="nombre"`, `name="rolId"`), ya que el Action (`routes.tsx`) depende de esto para extraer el `formData`. |
-| **Usar `<Form>` de React Router** | El formulario debe seguir encapsulado en el componente `<Form method="post">` (o `"put"`) de `react-router-dom`. No cambies esto por un `<form>` estándar con `onSubmit`. |
-| **Permisos de UI** | Asegúrate de no eliminar los componentes `<RequirePermiso>` que envuelven los botones de "Nuevo Usuario", "Editar" y "Baja", ya que estos aseguran que la UI se adapte al rol del usuario activo. |
-| **Manejo de Baja Lógica** | El botón de eliminar llama a la función asíncrona `handleEliminar(id)`. Mantén esta función o adaptala si decides usar un modal personalizado en lugar de `window.confirm()`. |
-
----
-
-## Expectativas de Diseño
-
-El diseño actual es funcional pero muy básico. Se espera que apliques mejores prácticas de UI/UX:
-
-- **Listado (UsuariosPage)**: 
-  - Transforma la tabla genérica en un data grid moderno o en un layout de tarjetas si lo ves conveniente.
-  - Agrega tooltips, micro-animaciones (ej. en hover), mejor contraste en los badges de estados (Activo/Inactivo) y roles.
-  - Un layout limpio para los filtros de estado.
-- **Formulario (UsuarioFormPage)**: 
-  - Mejora el diseño del formulario utilizando un layout de cuadrícula avanzado o dividiendo la información visualmente (ej. "Información Personal" vs "Autenticación y Roles").
-  - Dale un estilo premium a los inputs, con focus states refinados y soporte para mostrar los mensajes de error del action (`actionData.error`) de forma atractiva.
-
----
-
-## Notas Finales
-
-- Si necesitas agregar iconos, usa `lucide-react` o los iconos de Material de Google que ya se usan en el proyecto.
-- Tienes total libertad creativa sobre el HTML y las clases de Tailwind, siempre que los enlaces lógicos de los componentes de React Router no se alteren.

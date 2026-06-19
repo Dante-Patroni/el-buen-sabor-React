@@ -20,8 +20,9 @@ import { ConfigPage } from "../pages/Configuracion/ConfigPage";
 import { CajaPage } from "../pages/Caja/CajaPage";
 import { AccesoDenegado } from "../pages/Errores/AccesoDenegado";
 
-import { extractRubroId } from "@/lib/utils";
-import { authFetch } from "@/lib/authFetch";
+import { ROLES_HARDCODED } from "@/lib/mappings";
+import { getPlatos, getPlato, createPlato, updatePlato, uploadPlatoImagen } from "@/lib/api/platos.api";
+import { getUsuarios, getUsuario, createUsuario, updateUsuario } from "@/lib/api/usuarios.api";
 
 import {
   login,
@@ -122,77 +123,14 @@ const loginLoader = async () => {
   return null;
 };
 
-/**
- * @description Carga el listado de platos y normaliza el identificador de rubro recibido desde el backend.
- * @returns {Promise<unknown>} Listado de platos normalizado o respuesta original si no es un arreglo.
- * @throws {Error} Error al cargar los platos.
- */
-const platosLoader = async () => {
-  const res = await authFetch("/api/platos");
+const platosLoader = async () => getPlatos();
 
-  if (!res.ok) {
-    throw new Error("Error al cargar los platos");
-  }
+const platoLoader = async ({ params }: LoaderFunctionArgs) => getPlato(params.id!);
 
-  const platos = await res.json();
-
-  if (!Array.isArray(platos)) {
-    return platos;
-  }
-
-  return platos.map((plato: any) => ({
-    ...plato,
-    rubroId: extractRubroId(plato),
-  }));
-};
-
-/**
- * @description Carga un plato por ID para inicializar el formulario de edición.
- * @param {LoaderFunctionArgs} args - Argumentos del loader con los parámetros de ruta.
- * @returns {Promise<unknown>} Plato normalizado con rubroId.
- * @throws {Error} Error al cargar el plato.
- */
-const platoLoader = async ({
-  params,
-}: LoaderFunctionArgs) => {
-  const res = await authFetch(
-    `/api/platos/${params.id}`
-  );
-
-  if (!res.ok) {
-    const text = await res.text();
-
-    console.error("BACKEND ERROR:", text);
-
-    throw new Error("Error al cargar el plato");
-  }
-
-  const plato = await res.json();
-
-  return {
-    ...plato,
-    rubroId: extractRubroId(plato),
-  };
-};
-
-/**
- * @description Procesa la edición de un plato y sube una imagen nueva cuando el formulario la incluye.
- * @param {ActionFunctionArgs} args - Argumentos de la action con request y parámetros de ruta.
- * @returns {Promise<Response|{error: string}>} Redirección al catálogo o mensaje de error para la UI.
- */
-const editarPlatoAction = async ({
-  request,
-  params,
-}: ActionFunctionArgs) => {
+const editarPlatoAction = async ({ request, params }: ActionFunctionArgs) => {
   const id = params.id!;
-
   const formData = await request.formData();
-
-  console.log("=== EDITAR PLATO ===");
-  console.log("ID:", id);
-
-  const esIlimitado =
-    formData.get("esIlimitado") === "on";
+  const esIlimitado = formData.get("esIlimitado") === "on";
 
   const payload = {
     nombre: formData.get("nombre"),
@@ -200,112 +138,32 @@ const editarPlatoAction = async ({
     descripcion: formData.get("descripcion"),
     rubroId: Number(formData.get("rubroId")),
     esIlimitado,
-    esMenuDelDia:
-      formData.get("esMenuDelDia") === "on",
-    esActivo:
-      formData.get("esActivo") === "on",
-    stockActual: esIlimitado
-      ? null
-      : Number(formData.get("stockActual")),
+    esMenuDelDia: formData.get("esMenuDelDia") === "on",
+    esActivo: formData.get("esActivo") === "on",
+    stockActual: esIlimitado ? null : Number(formData.get("stockActual")),
   };
 
   try {
-    const res = await authFetch(
-      `/api/platos/${id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }
-    );
+    const res = await updatePlato(id, payload);
+    if (!res.ok) return { error: "Error al editar plato" };
 
-    if (!res.ok) {
-      const text = await res.text();
-
-      console.error(
-        "Error al editar plato:",
-        text
-      );
-
-      return {
-        error: "Error al editar plato",
-      };
-    }
-
-    const imagenFile =
-      formData.get("imagen") as File | null;
-
-    console.log(
-      "Imagen:",
-      imagenFile?.name || "NINGUNA"
-    );
-
-    if (
-      imagenFile &&
-      imagenFile.size > 0
-    ) {
-      const imgFormData = new FormData();
-
-      imgFormData.append(
-        "imagen",
-        imagenFile
-      );
-
-      const imgRes = await authFetch(
-        `/api/platos/${id}/imagen`,
-        {
-          method: "POST",
-          body: imgFormData,
-        }
-      );
-
-      if (!imgRes.ok) {
-        console.error(
-          "ERROR IMG:",
-          await imgRes.text()
-        );
-      } else {
-        const data = await imgRes.json();
-
-        console.log("IMG OK:", data);
-      }
+    const imagenFile = formData.get("imagen") as File | null;
+    if (imagenFile && imagenFile.size > 0) {
+      await uploadPlatoImagen(id, imagenFile);
     }
 
     return redirect("/cocina/platos");
-  } catch (error) {
-    console.error(
-      "Error en editarPlatoAction:",
-      error
-    );
-
-    return {
-      error: "Error en el proceso",
-    };
+  } catch {
+    return { error: "Error en el proceso" };
   }
 };
 
-/**
- * @description Procesa la creación de un plato y sube su imagen inicial cuando corresponde.
- * @param {ActionFunctionArgs} args - Argumentos de la action con los datos del formulario.
- * @returns {Promise<Response|{error: string}>} Redirección al catálogo o mensaje de error para la UI.
- */
-const crearPlatoAction = async ({
-  request,
-}: ActionFunctionArgs) => {
+const crearPlatoAction = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
 
-  console.log("=== CREAR PLATO ===");
+  if (!formData.get("nombre")) return { error: "El nombre es obligatorio" };
 
-  if (!formData.get("nombre")) {
-    return {
-      error: "El nombre es obligatorio",
-    };
-  }
-
-  const esIlimitado =
-    formData.get("esIlimitado") === "on";
+  const esIlimitado = formData.get("esIlimitado") === "on";
 
   const payload = {
     nombre: formData.get("nombre"),
@@ -313,96 +171,24 @@ const crearPlatoAction = async ({
     descripcion: formData.get("descripcion"),
     rubroId: Number(formData.get("rubroId")),
     esIlimitado,
-    esMenuDelDia:
-      formData.get("esMenuDelDia") === "on",
-    esActivo:
-      formData.get("esActivo") === "on",
-    stockActual: esIlimitado
-      ? null
-      : Number(formData.get("stockActual")),
+    esMenuDelDia: formData.get("esMenuDelDia") === "on",
+    esActivo: formData.get("esActivo") === "on",
+    stockActual: esIlimitado ? null : Number(formData.get("stockActual")),
   };
 
   try {
-    const res = await authFetch(
-      `/api/platos`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    if (!res.ok) {
-      const text = await res.text();
-
-      console.error(
-        "Error al crear plato:",
-        text
-      );
-
-      return {
-        error: "Error al crear plato",
-      };
-    }
+    const res = await createPlato(payload);
+    if (!res.ok) return { error: "Error al crear plato" };
 
     const nuevoPlato = await res.json();
-
-    console.log(
-      "Plato creado con ID:",
-      nuevoPlato.id
-    );
-
-    const imagenFile =
-      formData.get("imagen") as File | null;
-
-    console.log(
-      "Imagen:",
-      imagenFile?.name || "NINGUNA"
-    );
-
-    if (
-      imagenFile &&
-      imagenFile.size > 0
-    ) {
-      const imgFormData = new FormData();
-
-      imgFormData.append(
-        "imagen",
-        imagenFile
-      );
-
-      const imgRes = await authFetch(
-        `/api/platos/${nuevoPlato.id}/imagen`,
-        {
-          method: "POST",
-          body: imgFormData,
-        }
-      );
-
-      if (!imgRes.ok) {
-        console.error(
-          "ERROR IMG:",
-          await imgRes.text()
-        );
-      } else {
-        const data = await imgRes.json();
-
-        console.log("IMG OK:", data);
-      }
+    const imagenFile = formData.get("imagen") as File | null;
+    if (imagenFile && imagenFile.size > 0) {
+      await uploadPlatoImagen(nuevoPlato.id, imagenFile);
     }
 
     return redirect("/cocina/platos");
-  } catch (error) {
-    console.error(
-      "Error en crearPlatoAction:",
-      error
-    );
-
-    return {
-      error: "Error al crear plato",
-    };
+  } catch {
+    return { error: "Error al crear plato" };
   }
 };
 
@@ -451,39 +237,20 @@ const loginAction = async ({
   }
 };
 
-const usuariosLoader = async () => {
-  const res = await authFetch("/api/usuarios");
-  if (!res.ok) throw new Error("Error al cargar usuarios");
-  return res.json();
-};
-
-const ROLES_HARDCODED = [
-  { id: 1, nombre: "superadmin", descripcion: "Acceso total al sistema" },
-  { id: 2, nombre: "admin", descripcion: "Administrador del restaurante" },
-  { id: 3, nombre: "cajero", descripcion: "Operador de caja" },
-  { id: 4, nombre: "cocinero", descripcion: "Operador de cocina" },
-  { id: 5, nombre: "mozo", descripcion: "Atención de mesas y pedidos" },
-];
+const usuariosLoader = async () => getUsuarios();
 
 const usuarioFormLoader = async ({ params }: LoaderFunctionArgs) => {
   if (!params.id) return { roles: ROLES_HARDCODED };
-  const res = await authFetch(`/api/usuarios/${params.id}`);
-  if (!res.ok) throw new Error("Error al cargar usuario");
-  const usuario = await res.json();
+  const usuario = await getUsuario(params.id);
   return { usuario, roles: ROLES_HARDCODED };
 };
 
 const crearUsuarioAction = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
-  const payload = Object.fromEntries(formData.entries()) as Record<string, any>;
+  const payload = Object.fromEntries(formData.entries()) as Record<string, unknown>;
   payload.rolId = Number(payload.rolId);
-  
-  const res = await authFetch("/api/usuarios", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
 
+  const res = await createUsuario(payload);
   if (!res.ok) {
     const errorMsg = await res.text();
     return { error: errorMsg || "Error al crear usuario" };
@@ -493,17 +260,12 @@ const crearUsuarioAction = async ({ request }: ActionFunctionArgs) => {
 
 const editarUsuarioAction = async ({ request, params }: ActionFunctionArgs) => {
   const formData = await request.formData();
-  const payload = Object.fromEntries(formData.entries()) as Record<string, any>;
+  const payload = Object.fromEntries(formData.entries()) as Record<string, unknown>;
   payload.rolId = Number(payload.rolId);
   payload.activo = payload.activo === "on";
   if (!payload.password) delete payload.password;
 
-  const res = await authFetch(`/api/usuarios/${params.id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
+  const res = await updateUsuario(params.id!, payload);
   if (!res.ok) {
     const errorMsg = await res.text();
     return { error: errorMsg || "Error al actualizar usuario" };

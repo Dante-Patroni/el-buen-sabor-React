@@ -1,8 +1,16 @@
 import { Form, useActionData, useLoaderData, useNavigate, useNavigation } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/input";
+import { Select } from "../../components/ui/Select";
 import type { Usuario, Rol } from "../../types";
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+
+const GUIA_ITEMS = [
+  { texto: <>El <strong>Legajo</strong> es el identificador único del empleado.</> },
+  { texto: <>Los <strong>Mozos</strong> tienen acceso restringido al punto de venta.</> },
+  { texto: <>La <strong>Contraseña</strong> debe ser privada y personal.</> },
+];
 
 export const UsuarioFormPage = () => {
   const navigate = useNavigate();
@@ -35,18 +43,12 @@ export const UsuarioFormPage = () => {
               Guía Rápida
             </p>
             <ul className="space-y-2 text-sm text-stone-700">
-              <li className="flex items-start gap-2">
-                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-red-800" />
-                <span>El <strong>Legajo</strong> es el identificador único del empleado.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-red-800" />
-                <span>Los <strong>Mozos</strong> tienen acceso restringido al punto de venta.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-red-800" />
-                <span>La <strong>Contraseña</strong> debe ser privada y personal.</span>
-              </li>
+              {GUIA_ITEMS.map((item, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <ShieldCheck className="mt-0.5 size-4 shrink-0 text-red-800" />
+                  <span>{item.texto}</span>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -66,14 +68,14 @@ export const UsuarioFormPage = () => {
               <label htmlFor="nombre" className="text-xs font-semibold uppercase tracking-wider text-stone-500">
                 Nombre *
               </label>
-              <input
+              <Input
                 id="nombre"
                 name="nombre"
                 type="text"
                 defaultValue={usuario?.nombre}
                 required
                 placeholder="Ej: Julian"
-                className="w-full rounded-xl border border-stone-300 bg-stone-50 p-3 focus:border-red-800 focus:outline-none"
+                className="rounded-xl border-stone-300 bg-stone-50 p-3 h-auto focus:border-red-800"
               />
             </div>
 
@@ -81,14 +83,14 @@ export const UsuarioFormPage = () => {
               <label htmlFor="apellido" className="text-xs font-semibold uppercase tracking-wider text-stone-500">
                 Apellido *
               </label>
-              <input
+              <Input
                 id="apellido"
                 name="apellido"
                 type="text"
                 defaultValue={usuario?.apellido}
                 required
                 placeholder="Ej: Alvarez"
-                className="w-full rounded-xl border border-stone-300 bg-stone-50 p-3 focus:border-red-800 focus:outline-none"
+                className="rounded-xl border-stone-300 bg-stone-50 p-3 h-auto focus:border-red-800"
               />
             </div>
           </div>
@@ -98,14 +100,14 @@ export const UsuarioFormPage = () => {
               <label htmlFor="legajo" className="text-xs font-semibold uppercase tracking-wider text-stone-500">
                 Legajo *
               </label>
-              <input
+              <Input
                 id="legajo"
                 name="legajo"
                 type="text"
                 defaultValue={usuario?.legajo}
                 required
                 placeholder="ID-4029"
-                className="w-full rounded-xl border border-stone-300 bg-stone-50 p-3 focus:border-red-800 focus:outline-none"
+                className="rounded-xl border-stone-300 bg-stone-50 p-3 h-auto focus:border-red-800"
               />
             </div>
 
@@ -113,20 +115,14 @@ export const UsuarioFormPage = () => {
               <label htmlFor="rolId" className="text-xs font-semibold uppercase tracking-wider text-stone-500">
                 Rol *
               </label>
-              <select
-                id="rolId"
-                name="rolId"
-                defaultValue={usuario?.rolId}
-                required
-                className="w-full rounded-xl border border-stone-300 bg-stone-50 p-3 focus:border-red-800 focus:outline-none"
-              >
+              <Select id="rolId" name="rolId" defaultValue={usuario?.rolId} required>
                 <option value="">Seleccione un rol</option>
                 {roles.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.nombre} - {r.descripcion}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
 
@@ -135,21 +131,23 @@ export const UsuarioFormPage = () => {
               {isEditing ? "Nueva Contraseña (dejar en blanco para no cambiar)" : "Contraseña *"}
             </label>
             <div className="relative">
-              <input
+              <Input
                 id="password"
                 name="password"
                 type={mostrarPassword ? "text" : "password"}
                 required={!isEditing}
-                className="w-full rounded-xl border border-stone-300 bg-stone-50 p-3 pr-11 focus:border-red-800 focus:outline-none"
+                className="rounded-xl border-stone-300 bg-stone-50 p-3 pr-11 h-auto focus:border-red-800"
               />
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => setMostrarPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
                 aria-label={mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
               >
                 {mostrarPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-              </button>
+              </Button>
             </div>
           </div>
 
